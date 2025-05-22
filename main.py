@@ -1,10 +1,17 @@
 import logging
 from app import app
-import routes.main
-import routes.auth
-import routes.reports
-import routes.admin
-import routes.diagnostics
+from routes import main
+from routes import auth
+from routes import reports
+from routes import admin
+from routes import diagnostics
+
+# Register blueprints with app
+app.register_blueprint(main.main_bp)
+app.register_blueprint(auth.auth_bp)
+app.register_blueprint(reports.reports_bp)
+app.register_blueprint(admin.admin_bp)
+app.register_blueprint(diagnostics.diagnostics_bp)
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
