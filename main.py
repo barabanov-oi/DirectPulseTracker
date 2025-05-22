@@ -4,6 +4,7 @@ import routes.main
 import routes.auth
 import routes.reports
 import routes.admin
+import routes.diagnostics
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)

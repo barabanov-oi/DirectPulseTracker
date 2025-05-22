@@ -45,6 +45,12 @@
                                     <i class="fas fa-filter"></i> Условия
                                 </a>
                             </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('diagnostics.index') }}">
+                                    <i class="fas fa-stethoscope"></i> Диагностика
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     {% if current_user.is_admin %}

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 diagnostics_bp = Blueprint('diagnostics', __name__)
 
-@diagnostics_bp.route('/diagnostics')
+@diagnostics_bp.route('/')
 @login_required
 def index():
     """Страница диагностики для проверки подключений к Яндекс Директу"""
@@ -21,7 +21,7 @@ def index():
     
     return render_template('diagnostics/index.html', summary=summary)
 
-@diagnostics_bp.route('/diagnostics/account/<int:token_id>')
+@diagnostics_bp.route('/account/<int:token_id>')
 @login_required
 def account_details(token_id):
     """Подробная информация об аккаунте и его кампаниях"""
@@ -34,7 +34,7 @@ def account_details(token_id):
                            token=token, 
                            campaign_data=campaign_data)
 
-@diagnostics_bp.route('/diagnostics/sync/<int:token_id>', methods=['POST'])
+@diagnostics_bp.route('/sync/<int:token_id>', methods=['POST'])
 @login_required
 def sync_account_campaigns(token_id):
     """Синхронизировать кампании для указанного аккаунта"""
@@ -50,7 +50,7 @@ def sync_account_campaigns(token_id):
     
     return redirect(url_for('diagnostics.account_details', token_id=token.id))
 
-@diagnostics_bp.route('/diagnostics/account/toggle/<int:token_id>', methods=['POST'])
+@diagnostics_bp.route('/account/toggle/<int:token_id>', methods=['POST'])
 @login_required
 def toggle_account_status(token_id):
     """Включить/выключить аккаунт"""
@@ -64,7 +64,7 @@ def toggle_account_status(token_id):
     
     return redirect(url_for('diagnostics.index'))
 
-@diagnostics_bp.route('/diagnostics/account/default/<int:token_id>', methods=['POST'])
+@diagnostics_bp.route('/account/default/<int:token_id>', methods=['POST'])
 @login_required
 def set_default_account(token_id):
     """Установить аккаунт по умолчанию"""
@@ -81,7 +81,7 @@ def set_default_account(token_id):
     
     return redirect(url_for('diagnostics.index'))
 
-@diagnostics_bp.route('/diagnostics/account/edit/<int:token_id>', methods=['POST'])
+@diagnostics_bp.route('/account/edit/<int:token_id>', methods=['POST'])
 @login_required
 def edit_account(token_id):
     """Изменить название аккаунта"""
@@ -97,7 +97,7 @@ def edit_account(token_id):
     
     return redirect(url_for('diagnostics.index'))
 
-@diagnostics_bp.route('/diagnostics/api/test/<int:token_id>')
+@diagnostics_bp.route('/api/test/<int:token_id>')
 @login_required
 def test_api_connection(token_id):
     """Проверить соединение с API Яндекс Директа"""
