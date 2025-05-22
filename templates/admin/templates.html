@@ -1,24 +1,24 @@
 {% extends 'base.html' %}
 
-{% block title %}Manage Templates - DirectPulse Admin{% endblock %}
+{% block title %}Управление шаблонами - Администратор DirectPulse{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-8">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Admin Dashboard</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Report Templates</li>
+                <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Панель администратора</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Шаблоны отчетов</li>
             </ol>
         </nav>
-        <h1><i class="fas fa-file-code"></i> Manage Report Templates</h1>
-        <p class="text-muted">View and manage all user report templates</p>
+        <h1><i class="fas fa-file-code"></i> Управление шаблонами отчетов</h1>
+        <p class="text-muted">Просмотр и управление всеми шаблонами отчетов пользователей</p>
     </div>
 </div>
 
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-primary text-white">
-        <h5 class="mb-0"><i class="fas fa-file-code"></i> All Templates</h5>
+        <h5 class="mb-0"><i class="fas fa-file-code"></i> Все шаблоны</h5>
     </div>
     <div class="card-body">
         {% if templates %}
@@ -27,12 +27,12 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Owner</th>
-                        <th>Template Name</th>
-                        <th>Date Range</th>
-                        <th>Created</th>
-                        <th>Updated</th>
-                        <th>Actions</th>
+                        <th>Владелец</th>
+                        <th>Название шаблона</th>
+                        <th>Диапазон дат</th>
+                        <th>Создан</th>
+                        <th>Обновлен</th>
+                        <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -47,10 +47,10 @@
                         <td>
                             <div class="btn-group">
                                 <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#viewTemplateModal{{ template.id }}">
-                                    <i class="fas fa-eye"></i> View
+                                    <i class="fas fa-eye"></i> Просмотр
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteTemplateModal{{ template.id }}">
-                                    <i class="fas fa-trash-alt"></i> Delete
+                                    <i class="fas fa-trash-alt"></i> Удалить
                                 </button>
                             </div>
                             
@@ -67,19 +67,19 @@
                                         <div class="modal-body">
                                             <div class="row mb-3">
                                                 <div class="col-md-6">
-                                                    <p><strong>Owner:</strong> {{ template.user.username }}</p>
-                                                    <p><strong>Date Range:</strong> {{ template.date_range }}</p>
-                                                    <p><strong>Created:</strong> {{ template.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
-                                                    <p><strong>Updated:</strong> {{ template.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                                    <p><strong>Владелец:</strong> {{ template.user.username }}</p>
+                                                    <p><strong>Диапазон дат:</strong> {{ template.date_range }}</p>
+                                                    <p><strong>Создан:</strong> {{ template.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                                    <p><strong>Обновлен:</strong> {{ template.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <p><strong>Description:</strong></p>
-                                                    <p>{{ template.description or 'No description provided' }}</p>
+                                                    <p><strong>Описание:</strong></p>
+                                                    <p>{{ template.description or 'Описание отсутствует' }}</p>
                                                 </div>
                                             </div>
                                             <div class="row">
                                                 <div class="col-12">
-                                                    <p><strong>Metrics:</strong></p>
+                                                    <p><strong>Метрики:</strong></p>
                                                     <div class="metrics-list">
                                                         {% set metrics = template.metrics|fromjson %}
                                                         {% for metric in metrics %}
@@ -90,7 +90,7 @@
                                             </div>
                                         </div>
                                         <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
                                         </div>
                                     </div>
                                 </div>
@@ -102,18 +102,18 @@
                                     <div class="modal-content">
                                         <div class="modal-header bg-danger text-white">
                                             <h5 class="modal-title" id="deleteTemplateModalLabel{{ template.id }}">
-                                                <i class="fas fa-exclamation-triangle"></i> Confirm Deletion
+                                                <i class="fas fa-exclamation-triangle"></i> Подтверждение удаления
                                             </h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
-                                            <p>Are you sure you want to delete the template <strong>{{ template.name }}</strong> owned by <strong>{{ template.user.username }}</strong>?</p>
-                                            <p class="text-danger">This action cannot be undone and will affect all schedules and conditions using this template.</p>
+                                            <p>Вы уверены, что хотите удалить шаблон <strong>{{ template.name }}</strong>, принадлежащий пользователю <strong>{{ template.user.username }}</strong>?</p>
+                                            <p class="text-danger">Это действие невозможно отменить, и оно повлияет на все расписания и условия, использующие этот шаблон.</p>
                                         </div>
                                         <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                                             <form action="{{ url_for('reports.delete_template', template_id=template.id) }}" method="POST">
-                                                <button type="submit" class="btn btn-danger">Delete Template</button>
+                                                <button type="submit" class="btn btn-danger">Удалить шаблон</button>
                                             </form>
                                         </div>
                                     </div>
@@ -128,7 +128,7 @@
         {% else %}
         <div class="text-center py-5">
             <i class="fas fa-file-code fa-3x text-muted mb-3"></i>
-            <p>No report templates have been created yet.</p>
+            <p>Шаблоны отчетов еще не созданы.</p>
         </div>
         {% endif %}
     </div>
@@ -136,14 +136,14 @@
 
 <div class="card shadow-sm">
     <div class="card-header bg-primary text-white">
-        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Template Statistics</h5>
+        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Статистика шаблонов</h5>
     </div>
     <div class="card-body">
         <div class="row">
             <div class="col-md-4 mb-4">
                 <div class="card h-100">
                     <div class="card-body text-center">
-                        <h5 class="card-title">Most Used Date Range</h5>
+                        <h5 class="card-title">Самый используемый диапазон дат</h5>
                         <div class="display-5 text-primary my-3">
                             {% if templates %}
                             {% set date_ranges = {} %}
@@ -162,7 +162,7 @@
                             {% endfor %}
                             {{ most_used.range }}
                             {% else %}
-                            N/A
+                            Н/Д
                             {% endif %}
                         </div>
                     </div>
@@ -171,7 +171,7 @@
             <div class="col-md-4 mb-4">
                 <div class="card h-100">
                     <div class="card-body text-center">
-                        <h5 class="card-title">Most Active User</h5>
+                        <h5 class="card-title">Самый активный пользователь</h5>
                         <div class="display-5 text-success my-3">
                             {% if templates %}
                             {% set users = {} %}
@@ -190,7 +190,7 @@
                             {% endfor %}
                             {{ most_active.user }}
                             {% else %}
-                            N/A
+                            Н/Д
                             {% endif %}
                         </div>
                     </div>
@@ -199,7 +199,7 @@
             <div class="col-md-4 mb-4">
                 <div class="card h-100">
                     <div class="card-body text-center">
-                        <h5 class="card-title">Most Used Metric</h5>
+                        <h5 class="card-title">Самая используемая метрика</h5>
                         <div class="display-5 text-info my-3">
                             {% if templates %}
                             {% set metrics_count = {'Impressions': 0, 'Clicks': 0, 'Cost': 0, 'Ctr': 0, 'Conversions': 0, 'ConversionRate': 0, 'CostPerConversion': 0} %}
@@ -219,7 +219,7 @@
                             {% endfor %}
                             {{ most_used_metric.name }}
                             {% else %}
-                            N/A
+                            Н/Д
                             {% endif %}
                         </div>
                     </div>

@@ -1,18 +1,18 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ 'Edit' if user else 'Add' }} User - DirectPulse Admin{% endblock %}
+{% block title %}{{ 'Редактирование' if user else 'Добавление' }} пользователя - Администратор DirectPulse{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-8">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Admin Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="{{ url_for('admin.users_list') }}">Users</a></li>
-                <li class="breadcrumb-item active" aria-current="page">{{ 'Edit' if user else 'Add' }} User</li>
+                <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Панель администратора</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('admin.users_list') }}">Пользователи</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ 'Редактирование' if user else 'Добавление' }} пользователя</li>
             </ol>
         </nav>
-        <h1><i class="fas fa-user-edit"></i> {{ 'Edit' if user else 'Add' }} User</h1>
+        <h1><i class="fas fa-user-edit"></i> {{ 'Редактирование' if user else 'Добавление' }} пользователя</h1>
     </div>
 </div>
 
@@ -20,13 +20,13 @@
     <div class="col-md-8">
         <div class="card shadow-sm">
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="fas fa-user-edit"></i> User Details</h5>
+                <h5 class="mb-0"><i class="fas fa-user-edit"></i> Данные пользователя</h5>
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('admin.edit_user', user_id=user.id) if user else url_for('admin.users_list') }}">
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="username" class="form-label">Username</label>
+                            <label for="username" class="form-label">Имя пользователя</label>
                             <input type="text" class="form-control" id="username" name="username" value="{{ user.username if user else '' }}" required>
                         </div>
                         <div class="col-md-6">
@@ -36,45 +36,45 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="new_password" class="form-label">New Password {{ "(leave blank to keep current)" if user else "" }}</label>
+                            <label for="new_password" class="form-label">Новый пароль {{ "(оставьте пустым, чтобы сохранить текущий)" if user else "" }}</label>
                             <input type="password" class="form-control" id="new_password" name="new_password" {{ "" if user else "required" }}>
                         </div>
                         <div class="col-md-6">
-                            <label for="timezone" class="form-label">Timezone</label>
+                            <label for="timezone" class="form-label">Часовой пояс</label>
                             <select class="form-select" id="timezone" name="timezone">
                                 <option value="UTC" {{ 'selected' if user and user.timezone == 'UTC' else '' }}>UTC</option>
-                                <option value="Europe/Moscow" {{ 'selected' if user and user.timezone == 'Europe/Moscow' else '' }}>Europe/Moscow</option>
-                                <option value="Europe/London" {{ 'selected' if user and user.timezone == 'Europe/London' else '' }}>Europe/London</option>
-                                <option value="America/New_York" {{ 'selected' if user and user.timezone == 'America/New_York' else '' }}>America/New_York</option>
-                                <option value="America/Los_Angeles" {{ 'selected' if user and user.timezone == 'America/Los_Angeles' else '' }}>America/Los_Angeles</option>
-                                <option value="Asia/Tokyo" {{ 'selected' if user and user.timezone == 'Asia/Tokyo' else '' }}>Asia/Tokyo</option>
-                                <option value="Australia/Sydney" {{ 'selected' if user and user.timezone == 'Australia/Sydney' else '' }}>Australia/Sydney</option>
+                                <option value="Europe/Moscow" {{ 'selected' if user and user.timezone == 'Europe/Moscow' else '' }}>Москва (Europe/Moscow)</option>
+                                <option value="Europe/London" {{ 'selected' if user and user.timezone == 'Europe/London' else '' }}>Лондон (Europe/London)</option>
+                                <option value="America/New_York" {{ 'selected' if user and user.timezone == 'America/New_York' else '' }}>Нью-Йорк (America/New_York)</option>
+                                <option value="America/Los_Angeles" {{ 'selected' if user and user.timezone == 'America/Los_Angeles' else '' }}>Лос-Анджелес (America/Los_Angeles)</option>
+                                <option value="Asia/Tokyo" {{ 'selected' if user and user.timezone == 'Asia/Tokyo' else '' }}>Токио (Asia/Tokyo)</option>
+                                <option value="Australia/Sydney" {{ 'selected' if user and user.timezone == 'Australia/Sydney' else '' }}>Сидней (Australia/Sydney)</option>
                             </select>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Telegram Status</label>
+                        <label class="form-label">Статус Telegram</label>
                         <div class="input-group">
-                            <span class="input-group-text">Chat ID</span>
-                            <input type="text" class="form-control" value="{{ user.telegram_chat_id if user and user.telegram_chat_id else 'Not connected' }}" readonly>
+                            <span class="input-group-text">ID чата</span>
+                            <input type="text" class="form-control" value="{{ user.telegram_chat_id if user and user.telegram_chat_id else 'Не подключен' }}" readonly>
                             <button class="btn btn-outline-secondary" type="button" id="copyTelegramId" {{ 'disabled' if not user or not user.telegram_chat_id else '' }}>
-                                <i class="fas fa-copy"></i> Copy
+                                <i class="fas fa-copy"></i> Копировать
                             </button>
                         </div>
                         <div class="form-text">
-                            User needs to connect their Telegram by sending <code>/bind {{ user.email if user else 'email' }}</code> to the bot
+                            Пользователь должен подключить Telegram, отправив <code>/bind {{ user.email if user else 'email' }}</code> боту
                         </div>
                     </div>
                     <div class="mb-3 form-check">
                         <input type="checkbox" class="form-check-input" id="is_admin" name="is_admin" {{ 'checked' if user and user.is_admin else '' }}>
-                        <label class="form-check-label" for="is_admin">Admin privileges</label>
+                        <label class="form-check-label" for="is_admin">Права администратора</label>
                     </div>
                     <div class="d-flex justify-content-between">
                         <a href="{{ url_for('admin.users_list') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Back to Users
+                            <i class="fas fa-arrow-left"></i> Назад к списку пользователей
                         </a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> {{ 'Update' if user else 'Create' }} User
+                            <i class="fas fa-save"></i> {{ 'Обновить' if user else 'Создать' }} пользователя
                         </button>
                     </div>
                 </form>
@@ -84,52 +84,52 @@
         {% if user %}
         <div class="card mt-4 shadow-sm">
             <div class="card-header bg-info text-white">
-                <h5 class="mb-0"><i class="fas fa-history"></i> User Activity</h5>
+                <h5 class="mb-0"><i class="fas fa-history"></i> Активность пользователя</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <h6>User Information</h6>
+                        <h6>Информация о пользователе</h6>
                         <ul class="list-group">
                             <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
-                                <span>Account Created</span>
+                                <span>Аккаунт создан</span>
                                 <span>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
                             </li>
                             <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
-                                <span>Yandex Direct Connected</span>
+                                <span>Яндекс Директ подключен</span>
                                 <span>
                                     {% if user.yandex_tokens.count() > 0 %}
-                                    <span class="badge bg-success">Yes</span>
+                                    <span class="badge bg-success">Да</span>
                                     {% else %}
-                                    <span class="badge bg-danger">No</span>
+                                    <span class="badge bg-danger">Нет</span>
                                     {% endif %}
                                 </span>
                             </li>
                             <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
-                                <span>Telegram Connected</span>
+                                <span>Telegram подключен</span>
                                 <span>
                                     {% if user.telegram_chat_id %}
-                                    <span class="badge bg-success">Yes</span>
+                                    <span class="badge bg-success">Да</span>
                                     {% else %}
-                                    <span class="badge bg-danger">No</span>
+                                    <span class="badge bg-danger">Нет</span>
                                     {% endif %}
                                 </span>
                             </li>
                         </ul>
                     </div>
                     <div class="col-md-6">
-                        <h6>Content Summary</h6>
+                        <h6>Сводка по контенту</h6>
                         <ul class="list-group">
                             <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
-                                Templates
+                                Шаблоны
                                 <span class="badge bg-primary rounded-pill">{{ user.report_templates.count() }}</span>
                             </li>
                             <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
-                                Schedules
+                                Расписания
                                 <span class="badge bg-primary rounded-pill">{{ user.schedules.count() }}</span>
                             </li>
                             <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
-                                Conditions
+                                Условия
                                 <span class="badge bg-primary rounded-pill">{{ user.conditions.count() }}</span>
                             </li>
                         </ul>
@@ -145,13 +145,13 @@
 {% block scripts %}
 <script>
     $(document).ready(function() {
-        // Copy Telegram ID button
+        // Кнопка копирования Telegram ID
         $('#copyTelegramId').click(function() {
             var chatId = '{{ user.telegram_chat_id if user and user.telegram_chat_id else "" }}';
             navigator.clipboard.writeText(chatId).then(function() {
-                $('#copyTelegramId').html('<i class="fas fa-check"></i> Copied!');
+                $('#copyTelegramId').html('<i class="fas fa-check"></i> Скопировано!');
                 setTimeout(function() {
-                    $('#copyTelegramId').html('<i class="fas fa-copy"></i> Copy');
+                    $('#copyTelegramId').html('<i class="fas fa-copy"></i> Копировать');
                 }, 2000);
             });
         });
