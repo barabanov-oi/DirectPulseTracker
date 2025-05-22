@@ -12,37 +12,37 @@
                     {% if current_user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}" href="{{ url_for('main.dashboard') }}">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                            <i class="fas fa-tachometer-alt"></i> Панель управления
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint.startswith('reports.') and not request.endpoint.endswith('_list') %}active{% endif %}" href="{{ url_for('reports.generate_report_view') }}">
-                            <i class="fas fa-file-chart-column"></i> Generate Report
+                            <i class="fas fa-file-chart-column"></i> Создать отчет
                         </a>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if request.endpoint.endswith('_list') %}active{% endif %}" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-cogs"></i> Manage
+                            <i class="fas fa-cogs"></i> Управление
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('reports.reports_list') }}">
-                                    <i class="fas fa-file-alt"></i> Reports
+                                    <i class="fas fa-file-alt"></i> Отчеты
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('reports.templates_list') }}">
-                                    <i class="fas fa-file-code"></i> Templates
+                                    <i class="fas fa-file-code"></i> Шаблоны
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('reports.schedules_list') }}">
-                                    <i class="fas fa-clock"></i> Schedules
+                                    <i class="fas fa-clock"></i> Расписания
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('reports.conditions_list') }}">
-                                    <i class="fas fa-filter"></i> Conditions
+                                    <i class="fas fa-filter"></i> Условия
                                 </a>
                             </li>
                         </ul>
@@ -50,27 +50,27 @@
                     {% if current_user.is_admin %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if request.endpoint.startswith('admin.') %}active{% endif %}" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-user-shield"></i> Admin
+                            <i class="fas fa-user-shield"></i> Администрирование
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="adminDropdown">
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('admin.admin_dashboard') }}">
-                                    <i class="fas fa-chart-bar"></i> Overview
+                                    <i class="fas fa-chart-bar"></i> Обзор
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('admin.users_list') }}">
-                                    <i class="fas fa-users"></i> Users
+                                    <i class="fas fa-users"></i> Пользователи
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('admin.tokens_list') }}">
-                                    <i class="fas fa-key"></i> Tokens
+                                    <i class="fas fa-key"></i> Токены
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('admin.templates_list') }}">
-                                    <i class="fas fa-file-code"></i> Templates
+                                    <i class="fas fa-file-code"></i> Шаблоны
                                 </a>
                             </li>
                         </ul>
@@ -88,13 +88,13 @@
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('auth.yandex_authorize') }}">
-                                    <i class="fas fa-link"></i> Connect Yandex Direct
+                                    <i class="fas fa-link"></i> Подключить Яндекс Директ
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
-                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                    <i class="fas fa-sign-out-alt"></i> Выйти
                                 </a>
                             </li>
                         </ul>
@@ -102,12 +102,12 @@
                     {% else %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'auth.login' %}active{% endif %}" href="{{ url_for('auth.login') }}">
-                            <i class="fas fa-sign-in-alt"></i> Login
+                            <i class="fas fa-sign-in-alt"></i> Войти
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'auth.register' %}active{% endif %}" href="{{ url_for('auth.register') }}">
-                            <i class="fas fa-user-plus"></i> Register
+                            <i class="fas fa-user-plus"></i> Регистрация
                         </a>
                     </li>
                     {% endif %}
