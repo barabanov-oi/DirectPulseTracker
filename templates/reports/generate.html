@@ -1,0 +1,30 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-file-chart-column"></i> Создание отчета</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="template_id" class="form-label">Выберите шаблон отчета</label>
+                    <select class="form-select" id="template_id" name="template_id" required>
+                        <option value="">-- Выберите шаблон --</option>
+                        {% for template in templates %}
+                        <option value="{{ template.id }}" {% if request.args.get('template_id')|int == template.id %}selected{% endif %}>
+                            {{ template.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-file-chart-column"></i> Создать отчет
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
