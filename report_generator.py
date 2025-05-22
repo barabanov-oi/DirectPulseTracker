@@ -27,6 +27,15 @@ def generate_report(yandex_client, template):
         # Get the campaign statistics
         logger.info(f"Requesting data from {date_from} to {date_to}")
         try:
+            # Проверим, есть ли активные кампании в аккаунте
+            campaigns = yandex_client.get_campaigns()
+            if not campaigns or len(campaigns.get('Campaigns', [])) == 0:
+                logger.warning("No active campaigns found in Yandex Direct account")
+                return None, "Нет данных за выбранный период. В аккаунте не найдены активные кампании."
+                
+            logger.info(f"Found {len(campaigns.get('Campaigns', []))} campaigns")
+            
+            # Получаем статистику по кампаниям
             df = yandex_client.get_campaign_stats_dataframe(
                 date_from=date_from.strftime('%Y-%m-%d'),
                 date_to=date_to.strftime('%Y-%m-%d')
@@ -35,7 +44,7 @@ def generate_report(yandex_client, template):
             
             if df.empty:
                 logger.warning("Received empty dataframe from Yandex Direct API")
-                return None, "Нет данных за выбранный период. Проверьте что: \n1. В аккаунте есть активные кампании\n2. Был выбран корректный период\n3. Токен доступа активен"
+                return None, "Нет данных за выбранный период. Возможные причины: \n1. В аккаунте нет статистики за указанный период\n2. Выбран некорректный диапазон дат\n3. В API Яндекс Директа временно недоступны данные"
             
             # Process and aggregate data
             report_data = process_report_data(df, metrics)
