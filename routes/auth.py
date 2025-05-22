@@ -107,14 +107,15 @@ def logout():
 @auth_bp.route('/yandex/authorize')
 @login_required
 def yandex_authorize():
-    """Redirect user to Yandex OAuth authorization page"""
+    """Show page with Yandex Direct connection options"""
     auth_url = get_yandex_auth_url()
     
     if not auth_url:
-        flash('Yandex Direct integration is not configured correctly', 'danger')
-        return redirect(url_for('main.dashboard'))
+        # Создаем URL для ручного получения токена, даже если клиент не настроен
+        auth_url = "https://oauth.yandex.ru/authorize?response_type=token&client_id=18bd059cacd948faaa3fd34d622eeab7"
+        flash('Автоматическая авторизация недоступна, используйте ручной ввод токена', 'warning')
     
-    return redirect(auth_url)
+    return render_template('auth/yandex_token_form.html', oauth_url=auth_url)
 
 @auth_bp.route('/yandex/callback')
 @login_required
@@ -123,15 +124,53 @@ def yandex_callback():
     code = request.args.get('code')
     
     if not code:
-        flash('Authorization failed', 'danger')
+        flash('Авторизация не удалась', 'danger')
         return redirect(url_for('main.dashboard'))
     
     success = process_yandex_callback(code)
     
     if success:
-        flash('Yandex Direct account connected successfully', 'success')
+        flash('Аккаунт Яндекс Директа успешно подключен', 'success')
     else:
-        flash('Failed to connect Yandex Direct account', 'danger')
+        flash('Не удалось подключить аккаунт Яндекс Директа', 'danger')
+    
+    return redirect(url_for('main.dashboard'))
+
+@auth_bp.route('/yandex/save-token', methods=['POST'])
+@login_required
+def save_yandex_token():
+    """Save manually entered Yandex Direct token"""
+    from datetime import datetime, timedelta
+    from yandex_direct import store_token_for_user
+    
+    # Получаем данные из формы
+    access_token = request.form.get('access_token')
+    client_login = request.form.get('client_login')
+    
+    if not access_token:
+        flash('Необходимо указать токен доступа', 'danger')
+        return redirect(url_for('auth.yandex_authorize'))
+    
+    # Создаем данные токена
+    token_data = {
+        'access_token': access_token,
+        'refresh_token': 'manual_entry_no_refresh',  # При ручном вводе нет refresh_token
+        'expires_in': 31536000,  # 1 год в секундах (стандартный срок для токенов Яндекса)
+        'token_type': 'bearer'
+    }
+    
+    try:
+        # Сохраняем токен в базе данных
+        token = store_token_for_user(current_user.id, token_data, client_login)
+        
+        if token:
+            flash('Токен Яндекс Директа успешно сохранен', 'success')
+        else:
+            flash('Не удалось сохранить токен', 'danger')
+            
+    except Exception as e:
+        logger.exception(f'Ошибка при сохранении токена: {e}')
+        flash(f'Произошла ошибка при сохранении токена: {str(e)}', 'danger')
     
     return redirect(url_for('main.dashboard'))
 

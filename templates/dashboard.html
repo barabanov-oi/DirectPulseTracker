@@ -1,20 +1,20 @@
 {% extends 'base.html' %}
 
-{% block title %}Dashboard - DirectPulse{% endblock %}
+{% block title %}Панель управления - DirectPulse{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-8">
-        <h1 class="mb-4"><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+        <h1 class="mb-4"><i class="fas fa-tachometer-alt"></i> Панель управления</h1>
     </div>
     <div class="col-md-4 text-md-end">
         {% if not has_yandex_token %}
         <a href="{{ url_for('auth.yandex_authorize') }}" class="btn btn-primary">
-            <i class="fas fa-link"></i> Connect Yandex Direct
+            <i class="fas fa-link"></i> Подключить Яндекс Директ
         </a>
         {% else %}
         <a href="{{ url_for('reports.generate_report_view') }}" class="btn btn-primary">
-            <i class="fas fa-file-chart-column"></i> Generate Report
+            <i class="fas fa-file-chart-column"></i> Создать отчет
         </a>
         {% endif %}
     </div>
@@ -22,8 +22,8 @@
 
 {% if not has_yandex_token %}
 <div class="alert alert-warning" role="alert">
-    <i class="fas fa-exclamation-triangle"></i> You need to connect your Yandex Direct account to use DirectPulse.
-    <a href="{{ url_for('auth.yandex_authorize') }}" class="alert-link">Connect now</a>.
+    <i class="fas fa-exclamation-triangle"></i> Для использования DirectPulse необходимо подключить аккаунт Яндекс Директа.
+    <a href="{{ url_for('auth.yandex_authorize') }}" class="alert-link">Подключить сейчас</a>.
 </div>
 {% endif %}
 
@@ -32,7 +32,7 @@
     <div class="col-md-4 mb-4">
         <div class="card shadow-sm h-100">
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="fas fa-chart-simple"></i> Quick Stats</h5>
+                <h5 class="mb-0"><i class="fas fa-chart-simple"></i> Статистика</h5>
             </div>
             <div class="card-body">
                 <div class="row mb-3">
@@ -44,7 +44,7 @@
                                 </div>
                             </div>
                             <div class="flex-grow-1 ms-3">
-                                <div class="text-muted">Reports</div>
+                                <div class="text-muted">Отчеты</div>
                                 <div class="h5">{{ recent_reports|length }}</div>
                             </div>
                         </div>
@@ -59,7 +59,7 @@
                                 </div>
                             </div>
                             <div class="flex-grow-1 ms-3">
-                                <div class="text-muted">Templates</div>
+                                <div class="text-muted">Шаблоны</div>
                                 <div class="h5">{{ templates|length }}</div>
                             </div>
                         </div>
@@ -74,7 +74,7 @@
                                 </div>
                             </div>
                             <div class="flex-grow-1 ms-3">
-                                <div class="text-muted">Active Schedules</div>
+                                <div class="text-muted">Активные расписания</div>
                                 <div class="h5">{{ schedules|selectattr('is_active', 'equalto', true)|list|length }}</div>
                             </div>
                         </div>
@@ -82,7 +82,7 @@
                 </div>
             </div>
             <div class="card-footer">
-                <a href="{{ url_for('reports.reports_list') }}" class="btn btn-sm btn-outline-primary">View All Reports</a>
+                <a href="{{ url_for('reports.reports_list') }}" class="btn btn-sm btn-outline-primary">Все отчеты</a>
             </div>
         </div>
     </div>
@@ -91,7 +91,7 @@
     <div class="col-md-8 mb-4">
         <div class="card shadow-sm h-100">
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="fas fa-file-alt"></i> Recent Reports</h5>
+                <h5 class="mb-0"><i class="fas fa-file-alt"></i> Последние отчеты</h5>
             </div>
             <div class="card-body">
                 {% if recent_reports %}
@@ -99,10 +99,10 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Title</th>
-                                <th>Date</th>
-                                <th>Type</th>
-                                <th>Actions</th>
+                                <th>Название</th>
+                                <th>Дата</th>
+                                <th>Тип</th>
+                                <th>Действия</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -112,16 +112,16 @@
                                 <td>{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                                 <td>
                                     {% if report.schedule_id %}
-                                    <span class="badge bg-warning">Scheduled</span>
+                                    <span class="badge bg-warning">По расписанию</span>
                                     {% elif report.condition_id %}
-                                    <span class="badge bg-info">Condition</span>
+                                    <span class="badge bg-info">По условию</span>
                                     {% else %}
-                                    <span class="badge bg-success">Manual</span>
+                                    <span class="badge bg-success">Вручную</span>
                                     {% endif %}
                                 </td>
                                 <td>
                                     <a href="{{ url_for('reports.view_report', report_id=report.id) }}" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-eye"></i> View
+                                        <i class="fas fa-eye"></i> Просмотр
                                     </a>
                                 </td>
                             </tr>
@@ -132,8 +132,8 @@
                 {% else %}
                 <div class="text-center py-5">
                     <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
-                    <p>No reports generated yet.</p>
-                    <a href="{{ url_for('reports.generate_report_view') }}" class="btn btn-primary">Generate Your First Report</a>
+                    <p>Отчеты еще не созданы.</p>
+                    <a href="{{ url_for('reports.generate_report_view') }}" class="btn btn-primary">Создать первый отчет</a>
                 </div>
                 {% endif %}
             </div>
@@ -146,7 +146,7 @@
     <div class="col-md-6 mb-4">
         <div class="card shadow-sm h-100">
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="fas fa-file-code"></i> Report Templates</h5>
+                <h5 class="mb-0"><i class="fas fa-file-code"></i> Шаблоны отчетов</h5>
             </div>
             <div class="card-body">
                 {% if templates %}
@@ -157,25 +157,25 @@
                             <h6 class="mb-1">{{ template.name }}</h6>
                             <small>{{ template.date_range }}</small>
                         </div>
-                        <small class="text-muted">{{ template.description or 'No description' }}</small>
+                        <small class="text-muted">{{ template.description or 'Нет описания' }}</small>
                     </a>
                     {% endfor %}
                 </div>
                 {% if templates|length > 5 %}
                 <div class="text-center mt-3">
-                    <a href="{{ url_for('reports.templates_list') }}" class="btn btn-sm btn-outline-primary">View All Templates</a>
+                    <a href="{{ url_for('reports.templates_list') }}" class="btn btn-sm btn-outline-primary">Все шаблоны</a>
                 </div>
                 {% endif %}
                 {% else %}
                 <div class="text-center py-4">
                     <i class="fas fa-file-code fa-3x text-muted mb-3"></i>
-                    <p>No templates created yet.</p>
-                    <a href="{{ url_for('reports.create_template') }}" class="btn btn-primary">Create Your First Template</a>
+                    <p>Шаблоны еще не созданы.</p>
+                    <a href="{{ url_for('reports.create_template') }}" class="btn btn-primary">Создать первый шаблон</a>
                 </div>
                 {% endif %}
             </div>
             <div class="card-footer">
-                <a href="{{ url_for('reports.create_template') }}" class="btn btn-sm btn-outline-primary">Create New Template</a>
+                <a href="{{ url_for('reports.create_template') }}" class="btn btn-sm btn-outline-primary">Создать новый шаблон</a>
             </div>
         </div>
     </div>
@@ -184,18 +184,18 @@
     <div class="col-md-6 mb-4">
         <div class="card shadow-sm h-100">
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="fas fa-clock"></i> Schedules & Conditions</h5>
+                <h5 class="mb-0"><i class="fas fa-clock"></i> Расписания и условия</h5>
             </div>
             <div class="card-body">
                 <ul class="nav nav-tabs" id="schedulesTab" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="schedules-tab" data-bs-toggle="tab" data-bs-target="#schedules" type="button" role="tab" aria-controls="schedules" aria-selected="true">
-                            <i class="fas fa-clock"></i> Schedules
+                            <i class="fas fa-clock"></i> Расписания
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="conditions-tab" data-bs-toggle="tab" data-bs-target="#conditions" type="button" role="tab" aria-controls="conditions" aria-selected="false">
-                            <i class="fas fa-filter"></i> Conditions
+                            <i class="fas fa-filter"></i> Условия
                         </button>
                     </li>
                 </ul>
@@ -209,27 +209,27 @@
                                     <h6 class="mb-1">{{ schedule.name }}</h6>
                                     <div>
                                         {% if schedule.is_active %}
-                                        <span class="badge bg-success">Active</span>
+                                        <span class="badge bg-success">Активно</span>
                                         {% else %}
-                                        <span class="badge bg-danger">Inactive</span>
+                                        <span class="badge bg-danger">Неактивно</span>
                                         {% endif %}
                                     </div>
                                 </div>
                                 <small class="text-muted">{{ schedule.cron_expression }}</small>
-                                <small class="d-block">Template: {{ schedule.template.name }}</small>
+                                <small class="d-block">Шаблон: {{ schedule.template.name }}</small>
                             </div>
                             {% endfor %}
                         </div>
                         {% if schedules|length > 5 %}
                         <div class="text-center mt-3">
-                            <a href="{{ url_for('reports.schedules_list') }}" class="btn btn-sm btn-outline-primary">View All Schedules</a>
+                            <a href="{{ url_for('reports.schedules_list') }}" class="btn btn-sm btn-outline-primary">Все расписания</a>
                         </div>
                         {% endif %}
                         {% else %}
                         <div class="text-center py-4">
                             <i class="fas fa-clock fa-3x text-muted mb-3"></i>
-                            <p>No schedules created yet.</p>
-                            <a href="{{ url_for('reports.create_schedule') }}" class="btn btn-primary">Create Your First Schedule</a>
+                            <p>Расписания еще не созданы.</p>
+                            <a href="{{ url_for('reports.create_schedule') }}" class="btn btn-primary">Создать первое расписание</a>
                         </div>
                         {% endif %}
                     </div>
@@ -242,27 +242,27 @@
                                     <h6 class="mb-1">{{ condition.name }}</h6>
                                     <div>
                                         {% if condition.is_active %}
-                                        <span class="badge bg-success">Active</span>
+                                        <span class="badge bg-success">Активно</span>
                                         {% else %}
-                                        <span class="badge bg-danger">Inactive</span>
+                                        <span class="badge bg-danger">Неактивно</span>
                                         {% endif %}
                                     </div>
                                 </div>
-                                <small class="text-muted">Check every {{ condition.check_interval // 60 }} minutes</small>
-                                <small class="d-block">Template: {{ condition.template.name }}</small>
+                                <small class="text-muted">Проверка каждые {{ condition.check_interval // 60 }} минут</small>
+                                <small class="d-block">Шаблон: {{ condition.template.name }}</small>
                             </div>
                             {% endfor %}
                         </div>
                         {% if conditions|length > 5 %}
                         <div class="text-center mt-3">
-                            <a href="{{ url_for('reports.conditions_list') }}" class="btn btn-sm btn-outline-primary">View All Conditions</a>
+                            <a href="{{ url_for('reports.conditions_list') }}" class="btn btn-sm btn-outline-primary">Все условия</a>
                         </div>
                         {% endif %}
                         {% else %}
                         <div class="text-center py-4">
                             <i class="fas fa-filter fa-3x text-muted mb-3"></i>
-                            <p>No conditions created yet.</p>
-                            <a href="{{ url_for('reports.create_condition') }}" class="btn btn-primary">Create Your First Condition</a>
+                            <p>Условия еще не созданы.</p>
+                            <a href="{{ url_for('reports.create_condition') }}" class="btn btn-primary">Создать первое условие</a>
                         </div>
                         {% endif %}
                     </div>
@@ -271,10 +271,10 @@
             <div class="card-footer">
                 <div class="btn-group">
                     <a href="{{ url_for('reports.create_schedule') }}" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-clock"></i> New Schedule
+                        <i class="fas fa-clock"></i> Новое расписание
                     </a>
                     <a href="{{ url_for('reports.create_condition') }}" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-filter"></i> New Condition
+                        <i class="fas fa-filter"></i> Новое условие
                     </a>
                 </div>
             </div>

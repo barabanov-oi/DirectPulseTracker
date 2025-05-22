@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Подключение Яндекс Директа - DirectPulse{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-link"></i> Подключение Яндекс Директа</h4>
+            </div>
+            <div class="card-body">
+                <p class="mb-4">Для работы с DirectPulse необходимо подключить ваш аккаунт Яндекс Директа. Вы можете сделать это двумя способами:</p>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4 mb-md-0">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Вариант 1: OAuth авторизация</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>Стандартный способ подключения через авторизацию в Яндексе.</p>
+                                <a href="{{ oauth_url }}" class="btn btn-primary w-100">
+                                    <i class="fas fa-sign-in-alt"></i> Авторизоваться в Яндексе
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Вариант 2: Ввод токена вручную</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>Если у вас уже есть токен Яндекс Директа, вы можете ввести его вручную:</p>
+                                <form method="POST" action="{{ url_for('auth.save_yandex_token') }}">
+                                    <div class="mb-3">
+                                        <label for="access_token" class="form-label">Токен доступа</label>
+                                        <input type="text" class="form-control" id="access_token" name="access_token" required>
+                                        <div class="form-text">Токен можно получить по <a href="https://oauth.yandex.ru/authorize?response_type=token&client_id=18bd059cacd948faaa3fd34d622eeab7" target="_blank">этой ссылке</a></div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="client_login" class="form-label">Логин клиента (опционально)</label>
+                                        <input type="text" class="form-control" id="client_login" name="client_login">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-save"></i> Сохранить токен
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer text-center">
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-link">Вернуться на панель управления</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
