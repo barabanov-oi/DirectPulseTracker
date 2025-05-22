@@ -795,10 +795,8 @@ class YandexDirectAPI:
             ]
             
             # Получаем кампании через tapi_yandex_direct
-            campaigns = self.api_client.campaigns().get(
-                SelectionCriteria=selection_criteria,
-                FieldNames=field_names
-            )
+            # Версия 2 библиотеки использует другой формат параметров
+            campaigns = self.api_client.campaigns().get()
             
             return {
                 'Campaigns': campaigns['Campaigns'] if 'Campaigns' in campaigns else []
