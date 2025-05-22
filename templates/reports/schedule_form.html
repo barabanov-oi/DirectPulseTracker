@@ -1,18 +1,19 @@
+
 {% extends 'base.html' %}
 
-{% block title %}{{ 'Edit' if schedule else 'Create' }} Schedule - DirectPulse{% endblock %}
+{% block title %}{{ 'Редактировать' if schedule else 'Создать' }} расписание - DirectPulse{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-8">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="{{ url_for('reports.schedules_list') }}">Schedules</a></li>
-                <li class="breadcrumb-item active" aria-current="page">{{ 'Edit' if schedule else 'Create' }} Schedule</li>
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Панель управления</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('reports.schedules_list') }}">Расписания</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ 'Редактировать' if schedule else 'Создать' }} расписание</li>
             </ol>
         </nav>
-        <h1><i class="fas fa-clock"></i> {{ 'Edit' if schedule else 'Create' }} Report Schedule</h1>
+        <h1><i class="fas fa-clock"></i> {{ 'Редактировать' if schedule else 'Создать' }} расписание отчета</h1>
     </div>
 </div>
 
@@ -20,55 +21,55 @@
     <div class="col-md-8">
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="fas fa-edit"></i> Schedule Details</h5>
+                <h5 class="mb-0"><i class="fas fa-edit"></i> Детали расписания</h5>
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('reports.edit_schedule', schedule_id=schedule.id) if schedule else url_for('reports.create_schedule') }}">
                     <div class="mb-3">
-                        <label for="name" class="form-label">Schedule Name</label>
+                        <label for="name" class="form-label">Название расписания</label>
                         <input type="text" class="form-control" id="name" name="name" value="{{ schedule.name if schedule else '' }}" required>
-                        <div class="form-text">A descriptive name for your schedule</div>
+                        <div class="form-text">Описательное название для вашего расписания</div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="template_id" class="form-label">Report Template</label>
+                        <label for="template_id" class="form-label">Шаблон отчета</label>
                         <select class="form-select" id="template_id" name="template_id" required>
-                            <option value="">Select a template</option>
+                            <option value="">Выберите шаблон</option>
                             {% for template in templates %}
                                 <option value="{{ template.id }}" {{ 'selected' if schedule and schedule.template_id == template.id else '' }}>
                                     {{ template.name }} ({{ template.date_range }})
                                 </option>
                             {% endfor %}
                         </select>
-                        <div class="form-text">The template to use for generating reports</div>
+                        <div class="form-text">Шаблон для генерации отчетов</div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="cron_expression" class="form-label">Schedule (Cron Expression)</label>
+                        <label for="cron_expression" class="form-label">Расписание (Cron выражение)</label>
                         <div class="input-group">
                             <input type="text" class="form-control" id="cron_expression" name="cron_expression" 
                                   value="{{ schedule.cron_expression if schedule else '0 9 * * 1-5' }}" required>
                             <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#cronHelperModal">
-                                <i class="fas fa-question-circle"></i> Help
+                                <i class="fas fa-question-circle"></i> Помощь
                             </button>
                         </div>
-                        <div class="form-text">When to run the report (in cron format)</div>
+                        <div class="form-text">Когда запускать отчет (в формате cron)</div>
                         <div id="cronDescription" class="form-text text-primary mt-2"></div>
                     </div>
                     
                     <div class="mb-3 form-check">
                         <input type="checkbox" class="form-check-input" id="is_active" name="is_active" 
                               {{ 'checked' if not schedule or schedule.is_active else '' }}>
-                        <label class="form-check-label" for="is_active">Active</label>
-                        <div class="form-text">Uncheck to temporarily disable this schedule</div>
+                        <label class="form-check-label" for="is_active">Активно</label>
+                        <div class="form-text">Отключите, чтобы временно приостановить это расписание</div>
                     </div>
                     
                     <div class="d-flex justify-content-between">
                         <a href="{{ url_for('reports.schedules_list') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Back to Schedules
+                            <i class="fas fa-arrow-left"></i> Назад к расписаниям
                         </a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> {{ 'Update' if schedule else 'Create' }} Schedule
+                            <i class="fas fa-save"></i> {{ 'Обновить' if schedule else 'Создать' }} расписание
                         </button>
                     </div>
                 </form>
@@ -79,132 +80,132 @@
     <div class="col-md-4">
         <div class="card shadow-sm">
             <div class="card-header bg-info text-white">
-                <h5 class="mb-0"><i class="fas fa-lightbulb"></i> Quick Schedules</h5>
+                <h5 class="mb-0"><i class="fas fa-lightbulb"></i> Быстрые расписания</h5>
             </div>
             <div class="card-body">
-                <p>Click on a preset to use it:</p>
+                <p>Нажмите на пресет, чтобы использовать его:</p>
                 <div class="list-group">
                     <button type="button" class="list-group-item list-group-item-action" data-cron="0 9 * * 1-5">
-                        Weekdays at 9:00 AM <code>0 9 * * 1-5</code>
+                        По будням в 9:00 <code>0 9 * * 1-5</code>
                     </button>
                     <button type="button" class="list-group-item list-group-item-action" data-cron="0 10 * * 1">
-                        Mondays at 10:00 AM <code>0 10 * * 1</code>
+                        По понедельникам в 10:00 <code>0 10 * * 1</code>
                     </button>
                     <button type="button" class="list-group-item list-group-item-action" data-cron="0 18 * * *">
-                        Daily at 6:00 PM <code>0 18 * * *</code>
+                        Ежедневно в 18:00 <code>0 18 * * *</code>
                     </button>
                     <button type="button" class="list-group-item list-group-item-action" data-cron="0 0 1 * *">
-                        1st day of month at midnight <code>0 0 1 * *</code>
+                        1-го числа каждого месяца в полночь <code>0 0 1 * *</code>
                     </button>
                     <button type="button" class="list-group-item list-group-item-action" data-cron="0 9 * * 0">
-                        Sundays at 9:00 AM <code>0 9 * * 0</code>
+                        По воскресеньям в 9:00 <code>0 9 * * 0</code>
                     </button>
                 </div>
                 
                 <div class="alert alert-info mt-3">
-                    <i class="fas fa-info-circle"></i> All schedules run in your configured timezone ({{ current_user.timezone }}).
+                    <i class="fas fa-info-circle"></i> Все расписания выполняются в вашем настроенном часовом поясе ({{ current_user.timezone }}).
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Cron Helper Modal -->
+<!-- Модальное окно помощи по Cron -->
 <div class="modal fade" id="cronHelperModal" tabindex="-1" aria-labelledby="cronHelperModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="cronHelperModalLabel">
-                    <i class="fas fa-question-circle"></i> Cron Expression Help
+                    <i class="fas fa-question-circle"></i> Помощь по Cron выражениям
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
             </div>
             <div class="modal-body">
-                <h5>Cron Expression Format</h5>
-                <p>A cron expression consists of 5 fields separated by spaces:</p>
-                <pre class="bg-dark text-light p-2 rounded"><code>minute hour day-of-month month day-of-week</code></pre>
+                <h5>Формат Cron выражения</h5>
+                <p>Cron выражение состоит из 5 полей, разделенных пробелами:</p>
+                <pre class="bg-dark text-light p-2 rounded"><code>минута час день-месяца месяц день-недели</code></pre>
                 
                 <table class="table table-bordered">
                     <thead>
                         <tr>
-                            <th>Field</th>
-                            <th>Values</th>
-                            <th>Special Characters</th>
-                            <th>Example</th>
+                            <th>Поле</th>
+                            <th>Значения</th>
+                            <th>Специальные символы</th>
+                            <th>Пример</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Minute</td>
+                            <td>Минута</td>
                             <td>0-59</td>
                             <td>* , -</td>
-                            <td>0 = top of the hour</td>
+                            <td>0 = начало часа</td>
                         </tr>
                         <tr>
-                            <td>Hour</td>
+                            <td>Час</td>
                             <td>0-23</td>
                             <td>* , -</td>
-                            <td>9 = 9 AM, 13 = 1 PM</td>
+                            <td>9 = 9:00, 13 = 13:00</td>
                         </tr>
                         <tr>
-                            <td>Day of Month</td>
+                            <td>День месяца</td>
                             <td>1-31</td>
                             <td>* , -</td>
-                            <td>15 = 15th day</td>
+                            <td>15 = 15-е число</td>
                         </tr>
                         <tr>
-                            <td>Month</td>
-                            <td>1-12 or JAN-DEC</td>
+                            <td>Месяц</td>
+                            <td>1-12 или ЯНВ-ДЕК</td>
                             <td>* , -</td>
-                            <td>3 = March</td>
+                            <td>3 = Март</td>
                         </tr>
                         <tr>
-                            <td>Day of Week</td>
-                            <td>0-6 or SUN-SAT</td>
+                            <td>День недели</td>
+                            <td>0-6 или ВС-СБ</td>
                             <td>* , -</td>
-                            <td>1 = Monday, 0 = Sunday</td>
+                            <td>1 = Понедельник, 0 = Воскресенье</td>
                         </tr>
                     </tbody>
                 </table>
                 
-                <h5>Common Examples</h5>
+                <h5>Общие примеры</h5>
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Expression</th>
-                            <th>Meaning</th>
+                            <th>Выражение</th>
+                            <th>Значение</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td><code>0 9 * * 1-5</code></td>
-                            <td>Every weekday at 9:00 AM</td>
+                            <td>Каждый будний день в 9:00</td>
                         </tr>
                         <tr>
                             <td><code>0 10 * * 1</code></td>
-                            <td>Every Monday at 10:00 AM</td>
+                            <td>Каждый понедельник в 10:00</td>
                         </tr>
                         <tr>
                             <td><code>0 0 1 * *</code></td>
-                            <td>At midnight on the 1st of every month</td>
+                            <td>В полночь 1-го числа каждого месяца</td>
                         </tr>
                         <tr>
                             <td><code>0 12 * * *</code></td>
-                            <td>Every day at 12:00 PM (noon)</td>
+                            <td>Каждый день в 12:00 (полдень)</td>
                         </tr>
                         <tr>
                             <td><code>0 */4 * * *</code></td>
-                            <td>Every 4 hours (midnight, 4 AM, 8 AM, etc.)</td>
+                            <td>Каждые 4 часа (полночь, 4:00, 8:00 и т.д.)</td>
                         </tr>
                         <tr>
                             <td><code>0 9-17 * * 1-5</code></td>
-                            <td>Every hour from 9 AM to 5 PM on weekdays</td>
+                            <td>Каждый час с 9:00 до 17:00 по будням</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it!</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Понятно!</button>
             </div>
         </div>
     </div>
@@ -215,24 +216,24 @@
 <script src="{{ url_for('static', filename='js/cronstrue.min.js') }}"></script>
 <script>
     $(document).ready(function() {
-        // Update cron expression description when input changes
+        // Обновление описания cron выражения при изменении
         function updateCronDescription() {
             try {
                 var cronExpression = $('#cron_expression').val();
                 var description = cronstrue.toString(cronExpression);
                 $('#cronDescription').html('<i class="fas fa-check-circle"></i> ' + description);
             } catch (e) {
-                $('#cronDescription').html('<i class="fas fa-exclamation-triangle"></i> Invalid cron expression');
+                $('#cronDescription').html('<i class="fas fa-exclamation-triangle"></i> Неверное cron выражение');
             }
         }
         
-        // Initial description update
+        // Начальное обновление описания
         updateCronDescription();
         
-        // Update description when input changes
+        // Обновление описания при изменении ввода
         $('#cron_expression').on('input', updateCronDescription);
         
-        // Set cron expression from quick schedules
+        // Установка cron выражения из быстрых расписаний
         $('.list-group-item').click(function() {
             var cronExpression = $(this).data('cron');
             $('#cron_expression').val(cronExpression);
