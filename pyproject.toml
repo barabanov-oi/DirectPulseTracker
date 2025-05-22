@@ -19,4 +19,5 @@ dependencies = [
     "pytz>=2025.2",
     "python-telegram-bot>=20.0",
     "telegram>=0.0.1",
+    "flask-migrate>=4.1.0",
 ]
