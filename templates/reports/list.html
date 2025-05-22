@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports - DirectPulse{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="fas fa-file-alt"></i> My Reports</h1>
+        <p class="text-muted">View all your generated reports</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a href="{{ url_for('reports.generate_report_view') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Generate New Report
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-file-alt"></i> Reports List</h5>
+    </div>
+    <div class="card-body">
+        {% if reports %}
+        <div class="table-responsive">
+            <table class="table table-hover" id="reportsTable">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Period</th>
+                        <th>Generated</th>
+                        <th>Source</th>
+                        <th>Telegram</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr>
+                        <td>{{ report.title }}</td>
+                        <td>{{ report.date_from }} to {{ report.date_to }}</td>
+                        <td>{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            {% if report.schedule_id %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-clock"></i> Scheduled
+                            </span>
+                            {% elif report.condition_id %}
+                            <span class="badge bg-info">
+                                <i class="fas fa-filter"></i> Condition
+                            </span>
+                            {% else %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-user"></i> Manual
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if report.sent_to_telegram %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check"></i> Sent
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-times"></i> Not Sent
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('reports.view_report', report_id=report.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                <a href="{{ url_for('reports.export_report', report_id=report.id) }}" class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-file-csv"></i> Export
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteReportModal{{ report.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Delete Report Modal -->
+                            <div class="modal fade" id="deleteReportModal{{ report.id }}" tabindex="-1" aria-labelledby="deleteReportModalLabel{{ report.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title" id="deleteReportModalLabel{{ report.id }}">
+                                                <i class="fas fa-exclamation-triangle"></i> Confirm Deletion
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to delete the report <strong>{{ report.title }}</strong>?</p>
+                                            <p class="text-danger">This action cannot be undone. The report data will be permanently removed.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="#" method="POST">
+                                                <button type="submit" class="btn btn-danger">Delete Report</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+            <p>No reports generated yet.</p>
+            <a href="{{ url_for('reports.generate_report_view') }}" class="btn btn-primary">Generate Your First Report</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Initialize DataTable
+        if ($('#reportsTable').length > 0) {
+            $('#reportsTable').DataTable({
+                order: [[2, 'desc']],
+                responsive: true
+            });
+        }
+    });
+</script>
+{% endblock %}

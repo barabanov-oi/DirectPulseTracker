@@ -1,0 +1,45 @@
+<footer class="bg-dark text-light py-4 mt-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <h5><i class="fas fa-chart-line"></i> DirectPulse</h5>
+                <p class="text-muted">
+                    Automated Yandex Direct advertising reports and alerts delivered to your Telegram.
+                </p>
+            </div>
+            <div class="col-md-3">
+                <h5>Quick Links</h5>
+                <ul class="list-unstyled">
+                    <li><a href="{{ url_for('main.index') }}" class="text-decoration-none text-info">Home</a></li>
+                    {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('main.dashboard') }}" class="text-decoration-none text-info">Dashboard</a></li>
+                    <li><a href="{{ url_for('reports.reports_list') }}" class="text-decoration-none text-info">Reports</a></li>
+                    <li><a href="{{ url_for('reports.templates_list') }}" class="text-decoration-none text-info">Templates</a></li>
+                    {% else %}
+                    <li><a href="{{ url_for('auth.login') }}" class="text-decoration-none text-info">Login</a></li>
+                    <li><a href="{{ url_for('auth.register') }}" class="text-decoration-none text-info">Register</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h5>Support</h5>
+                <ul class="list-unstyled">
+                    <li><a href="#" class="text-decoration-none text-info">Documentation</a></li>
+                    <li><a href="#" class="text-decoration-none text-info">API</a></li>
+                    <li><a href="#" class="text-decoration-none text-info">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <hr class="mt-4">
+        <div class="row">
+            <div class="col-md-6">
+                <p class="mb-0">&copy; 2023 DirectPulse. All rights reserved.</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="#" class="text-decoration-none text-info me-3"><i class="fab fa-telegram"></i></a>
+                <a href="#" class="text-decoration-none text-info me-3"><i class="fab fa-github"></i></a>
+                <a href="#" class="text-decoration-none text-info"><i class="fab fa-twitter"></i></a>
+            </div>
+        </div>
+    </div>
+</footer>

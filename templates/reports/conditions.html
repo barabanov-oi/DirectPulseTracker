@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block title %}Report Conditions - DirectPulse{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="fas fa-filter"></i> Report Conditions</h1>
+        <p class="text-muted">Manage your conditional report triggers</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a href="{{ url_for('reports.create_condition') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create New Condition
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-filter"></i> Your Conditions</h5>
+    </div>
+    <div class="card-body">
+        {% if conditions %}
+        <div class="table-responsive">
+            <table class="table table-hover" id="conditionsTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Template</th>
+                        <th>Condition</th>
+                        <th>Check Interval</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for condition in conditions %}
+                    <tr>
+                        <td>{{ condition.name }}</td>
+                        <td>{{ condition.template.name }}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#viewConditionModal{{ condition.id }}">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        </td>
+                        <td>{{ condition.check_interval // 60 }} minutes</td>
+                        <td>
+                            {% if condition.is_active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ condition.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('reports.edit_condition', condition_id=condition.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteConditionModal{{ condition.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- View Condition Modal -->
+                            <div class="modal fade" id="viewConditionModal{{ condition.id }}" tabindex="-1" aria-labelledby="viewConditionModalLabel{{ condition.id }}" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-info text-white">
+                                            <h5 class="modal-title" id="viewConditionModalLabel{{ condition.id }}">
+                                                <i class="fas fa-filter"></i> {{ condition.name }}
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <h6>Condition Details:</h6>
+                                                <div class="condition-display p-3 bg-dark text-light rounded">
+                                                    <pre><code>{{ condition.condition_json | tojson(indent=2) }}</code></pre>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <p><strong>Template:</strong> {{ condition.template.name }}</p>
+                                                    <p><strong>Check Interval:</strong> {{ condition.check_interval // 60 }} minutes</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <p><strong>Status:</strong> 
+                                                        {% if condition.is_active %}
+                                                        <span class="badge bg-success">Active</span>
+                                                        {% else %}
+                                                        <span class="badge bg-danger">Inactive</span>
+                                                        {% endif %}
+                                                    </p>
+                                                    <p><strong>Created:</strong> {{ condition.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <a href="{{ url_for('reports.edit_condition', condition_id=condition.id) }}" class="btn btn-primary">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Delete Condition Modal -->
+                            <div class="modal fade" id="deleteConditionModal{{ condition.id }}" tabindex="-1" aria-labelledby="deleteConditionModalLabel{{ condition.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title" id="deleteConditionModalLabel{{ condition.id }}">
+                                                <i class="fas fa-exclamation-triangle"></i> Confirm Deletion
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to delete the condition <strong>{{ condition.name }}</strong>?</p>
+                                            <p class="text-danger">This action cannot be undone. The condition will be removed and no more reports will be triggered by it.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{{ url_for('reports.delete_condition', condition_id=condition.id) }}" method="POST">
+                                                <button type="submit" class="btn btn-danger">Delete Condition</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-filter fa-3x text-muted mb-3"></i>
+            <p>No conditions created yet.</p>
+            <a href="{{ url_for('reports.create_condition') }}" class="btn btn-primary">Create Your First Condition</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-info-circle"></i> About Conditions</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h5>What are Report Conditions?</h5>
+                <p>Conditions allow you to receive reports only when specific metrics meet your defined criteria, such as:</p>
+                <ul>
+                    <li>When cost exceeds a certain amount</li>
+                    <li>When CTR drops below a threshold</li>
+                    <li>When conversions reach a target number</li>
+                    <li>When multiple criteria are met simultaneously</li>
+                </ul>
+                <p>The system checks your conditions at the specified interval and generates reports only when triggered.</p>
+            </div>
+            <div class="col-md-6">
+                <h5>How Conditions Work</h5>
+                <p>Each condition has:</p>
+                <ul>
+                    <li><strong>Rules:</strong> Metric comparisons (e.g., "Cost > 10000")</li>
+                    <li><strong>Logic:</strong> How rules combine (AND/OR)</li>
+                    <li><strong>Check Interval:</strong> How often to evaluate</li>
+                    <li><strong>Template:</strong> What data to include in reports</li>
+                </ul>
+                <p>When a condition is triggered, a report is generated and sent to your Telegram automatically.</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb"></i> Tip: Use conditions for alerts about important changes in your campaigns, while using schedules for regular reporting.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Initialize DataTable
+        if ($('#conditionsTable').length > 0) {
+            $('#conditionsTable').DataTable({
+                responsive: true,
+                order: [[5, 'desc']]
+            });
+        }
+    });
+</script>
+{% endblock %}

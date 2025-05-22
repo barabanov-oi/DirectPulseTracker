@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - DirectPulse{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="fas fa-user-shield"></i> Admin Dashboard</h1>
+        <p class="text-muted">System overview and management</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Users Card -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-4 text-primary mb-3">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3 class="mb-3">{{ user_count }}</h3>
+                <h5 class="text-muted">Users</h5>
+                <p class="card-text">Total registered users in the system</p>
+                <a href="{{ url_for('admin.users_list') }}" class="btn btn-primary">
+                    <i class="fas fa-users"></i> Manage Users
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tokens Card -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-4 text-info mb-3">
+                    <i class="fas fa-key"></i>
+                </div>
+                <h3 class="mb-3">{{ token_count }}</h3>
+                <h5 class="text-muted">Yandex Tokens</h5>
+                <p class="card-text">Active Yandex Direct API tokens</p>
+                <a href="{{ url_for('admin.tokens_list') }}" class="btn btn-info">
+                    <i class="fas fa-key"></i> Manage Tokens
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Templates Card -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-4 text-success mb-3">
+                    <i class="fas fa-file-code"></i>
+                </div>
+                <h3 class="mb-3">{{ template_count }}</h3>
+                <h5 class="text-muted">Report Templates</h5>
+                <p class="card-text">User-created report templates</p>
+                <a href="{{ url_for('admin.templates_list') }}" class="btn btn-success">
+                    <i class="fas fa-file-code"></i> Manage Templates
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Information Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-server"></i> System Information</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h5>DirectPulse System</h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item bg-transparent">
+                        <i class="fas fa-check-circle text-success"></i> Telegram Bot Status: <span class="badge bg-success">Running</span>
+                    </li>
+                    <li class="list-group-item bg-transparent">
+                        <i class="fas fa-check-circle text-success"></i> Scheduler Status: <span class="badge bg-success">Running</span>
+                    </li>
+                    <li class="list-group-item bg-transparent">
+                        <i class="fas fa-database"></i> Database: <span class="badge bg-info">Connected</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h5>API Status</h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item bg-transparent">
+                        <i class="fas fa-check-circle text-success"></i> Yandex Direct API: <span class="badge bg-success">Active</span>
+                    </li>
+                    <li class="list-group-item bg-transparent">
+                        <i class="fas fa-check-circle text-success"></i> Telegram API: <span class="badge bg-success">Connected</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <a href="{{ url_for('admin.users_list') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                    <i class="fas fa-user-plus fa-2x mb-3"></i>
+                    <span>Add New User</span>
+                </a>
+            </div>
+            <div class="col-md-3 mb-3">
+                <a href="#" class="btn btn-outline-info w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                    <i class="fas fa-sync-alt fa-2x mb-3"></i>
+                    <span>Refresh Scheduler</span>
+                </a>
+            </div>
+            <div class="col-md-3 mb-3">
+                <a href="#" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                    <i class="fas fa-tasks fa-2x mb-3"></i>
+                    <span>View System Logs</span>
+                </a>
+            </div>
+            <div class="col-md-3 mb-3">
+                <a href="#" class="btn btn-outline-warning w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                    <i class="fas fa-cogs fa-2x mb-3"></i>
+                    <span>System Settings</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

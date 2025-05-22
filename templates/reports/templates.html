@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block title %}Report Templates - DirectPulse{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="fas fa-file-code"></i> Report Templates</h1>
+        <p class="text-muted">Manage your report templates</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a href="{{ url_for('reports.create_template') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create New Template
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-file-code"></i> Your Templates</h5>
+    </div>
+    <div class="card-body">
+        {% if templates %}
+        <div class="table-responsive">
+            <table class="table table-hover" id="templatesTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Date Range</th>
+                        <th>Metrics</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for template in templates %}
+                    <tr>
+                        <td>{{ template.name }}</td>
+                        <td>{{ template.description[:50] ~ '...' if template.description and template.description|length > 50 else template.description or 'No description' }}</td>
+                        <td><span class="badge bg-info">{{ template.date_range }}</span></td>
+                        <td>
+                            {% set metrics = template.metrics|fromjson %}
+                            <span class="badge bg-primary">{{ metrics|length }} metrics</span>
+                        </td>
+                        <td>{{ template.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('reports.edit_template', template_id=template.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-success" 
+                                        onclick="window.location.href='{{ url_for('reports.generate_report_view') }}?template_id={{ template.id }}'">
+                                    <i class="fas fa-file-chart-column"></i> Generate
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteTemplateModal{{ template.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Delete Template Modal -->
+                            <div class="modal fade" id="deleteTemplateModal{{ template.id }}" tabindex="-1" aria-labelledby="deleteTemplateModalLabel{{ template.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title" id="deleteTemplateModalLabel{{ template.id }}">
+                                                <i class="fas fa-exclamation-triangle"></i> Confirm Deletion
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to delete the template <strong>{{ template.name }}</strong>?</p>
+                                            <p class="text-danger">This action cannot be undone. Any schedules or conditions using this template will be affected.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{{ url_for('reports.delete_template', template_id=template.id) }}" method="POST">
+                                                <button type="submit" class="btn btn-danger">Delete Template</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-file-code fa-3x text-muted mb-3"></i>
+            <p>No templates created yet.</p>
+            <a href="{{ url_for('reports.create_template') }}" class="btn btn-primary">Create Your First Template</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-lightbulb"></i> Template Guide</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h5>What is a Report Template?</h5>
+                <p>A report template defines the structure and content of your Yandex Direct reports. It specifies:</p>
+                <ul>
+                    <li>Which metrics to include in the report (e.g., Impressions, Clicks, Cost)</li>
+                    <li>The date range for data collection (e.g., Last 7 Days, Yesterday)</li>
+                    <li>Custom naming and descriptions for organization</li>
+                </ul>
+                <p>Once created, templates can be used to generate reports on demand or used with schedules and conditions for automated reporting.</p>
+            </div>
+            <div class="col-md-6">
+                <h5>Available Metrics</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-group">
+                            <li class="list-group-item bg-transparent"><i class="fas fa-eye text-info"></i> Impressions</li>
+                            <li class="list-group-item bg-transparent"><i class="fas fa-mouse-pointer text-info"></i> Clicks</li>
+                            <li class="list-group-item bg-transparent"><i class="fas fa-money-bill text-info"></i> Cost</li>
+                            <li class="list-group-item bg-transparent"><i class="fas fa-percentage text-info"></i> CTR</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-group">
+                            <li class="list-group-item bg-transparent"><i class="fas fa-bullseye text-info"></i> Conversions</li>
+                            <li class="list-group-item bg-transparent"><i class="fas fa-chart-line text-info"></i> Conversion Rate</li>
+                            <li class="list-group-item bg-transparent"><i class="fas fa-dollar-sign text-info"></i> Cost per Conversion</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Initialize DataTable
+        if ($('#templatesTable').length > 0) {
+            $('#templatesTable').DataTable({
+                responsive: true,
+                order: [[4, 'desc']]
+            });
+        }
+    });
+</script>
+{% endblock %}

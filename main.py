@@ -1,0 +1,23 @@
+import logging
+from app import app
+import routes.main
+import routes.auth
+import routes.reports
+import routes.admin
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+# Note: We don't need to register blueprints here since they're already
+# registered at the end of each route file
+
+logger.info("Application initialized and ready")
+
+# Note: Scheduler and Telegram bot are disabled for initial startup
+# from scheduler import init_scheduler
+# init_scheduler()
+
+if __name__ == "__main__":
+    # Run the Flask app
+    app.run(host="0.0.0.0", port=5000, debug=True)

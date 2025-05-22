@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Report Schedules - DirectPulse{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="fas fa-clock"></i> Report Schedules</h1>
+        <p class="text-muted">Manage your automated report schedules</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a href="{{ url_for('reports.create_schedule') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create New Schedule
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-clock"></i> Your Schedules</h5>
+    </div>
+    <div class="card-body">
+        {% if schedules %}
+        <div class="table-responsive">
+            <table class="table table-hover" id="schedulesTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Template</th>
+                        <th>Schedule (Cron)</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for schedule in schedules %}
+                    <tr>
+                        <td>{{ schedule.name }}</td>
+                        <td>{{ schedule.template.name }}</td>
+                        <td><code>{{ schedule.cron_expression }}</code></td>
+                        <td>
+                            {% if schedule.is_active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ schedule.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('reports.edit_schedule', schedule_id=schedule.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteScheduleModal{{ schedule.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Delete Schedule Modal -->
+                            <div class="modal fade" id="deleteScheduleModal{{ schedule.id }}" tabindex="-1" aria-labelledby="deleteScheduleModalLabel{{ schedule.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title" id="deleteScheduleModalLabel{{ schedule.id }}">
+                                                <i class="fas fa-exclamation-triangle"></i> Confirm Deletion
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to delete the schedule <strong>{{ schedule.name }}</strong>?</p>
+                                            <p class="text-danger">This action cannot be undone. The schedule will be removed and no more reports will be generated automatically.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{{ url_for('reports.delete_schedule', schedule_id=schedule.id) }}" method="POST">
+                                                <button type="submit" class="btn btn-danger">Delete Schedule</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+            <p>No schedules created yet.</p>
+            <a href="{{ url_for('reports.create_schedule') }}" class="btn btn-primary">Create Your First Schedule</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-info-circle"></i> About Schedules</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h5>What are Report Schedules?</h5>
+                <p>Report schedules allow you to automate the generation and delivery of Yandex Direct reports based on a specific time schedule.</p>
+                <p>When a schedule is triggered:</p>
+                <ol>
+                    <li>DirectPulse generates a report using your selected template</li>
+                    <li>The report is saved in your account</li>
+                    <li>A notification is sent to your connected Telegram chat</li>
+                </ol>
+                <p>Schedules run according to your configured timezone and will continue to run until deactivated.</p>
+            </div>
+            <div class="col-md-6">
+                <h5>Cron Expression Guide</h5>
+                <p>Schedules use cron expressions to define when they should run. A cron expression consists of 5 fields:</p>
+                <pre class="bg-dark text-light p-2 rounded"><code>minute hour day-of-month month day-of-week</code></pre>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Example</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>0 9 * * 1-5</code></td>
+                            <td>Every weekday at 9:00 AM</td>
+                        </tr>
+                        <tr>
+                            <td><code>0 10 * * 1</code></td>
+                            <td>Every Monday at 10:00 AM</td>
+                        </tr>
+                        <tr>
+                            <td><code>0 0 1 * *</code></td>
+                            <td>At midnight on the 1st of every month</td>
+                        </tr>
+                        <tr>
+                            <td><code>0 12 * * *</code></td>
+                            <td>Every day at 12:00 PM (noon)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Initialize DataTable
+        if ($('#schedulesTable').length > 0) {
+            $('#schedulesTable').DataTable({
+                responsive: true,
+                order: [[4, 'desc']]
+            });
+        }
+    });
+</script>
+{% endblock %}

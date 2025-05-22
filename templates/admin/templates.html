@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Templates - DirectPulse Admin{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Admin Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Report Templates</li>
+            </ol>
+        </nav>
+        <h1><i class="fas fa-file-code"></i> Manage Report Templates</h1>
+        <p class="text-muted">View and manage all user report templates</p>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-file-code"></i> All Templates</h5>
+    </div>
+    <div class="card-body">
+        {% if templates %}
+        <div class="table-responsive">
+            <table class="table table-hover" id="templatesTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Owner</th>
+                        <th>Template Name</th>
+                        <th>Date Range</th>
+                        <th>Created</th>
+                        <th>Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for template in templates %}
+                    <tr>
+                        <td>{{ template.id }}</td>
+                        <td>{{ template.user.username }}</td>
+                        <td>{{ template.name }}</td>
+                        <td><span class="badge bg-info">{{ template.date_range }}</span></td>
+                        <td>{{ template.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ template.updated_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#viewTemplateModal{{ template.id }}">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteTemplateModal{{ template.id }}">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>
+                            </div>
+                            
+                            <!-- View Template Modal -->
+                            <div class="modal fade" id="viewTemplateModal{{ template.id }}" tabindex="-1" aria-labelledby="viewTemplateModalLabel{{ template.id }}" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title" id="viewTemplateModalLabel{{ template.id }}">
+                                                <i class="fas fa-file-code"></i> {{ template.name }}
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="row mb-3">
+                                                <div class="col-md-6">
+                                                    <p><strong>Owner:</strong> {{ template.user.username }}</p>
+                                                    <p><strong>Date Range:</strong> {{ template.date_range }}</p>
+                                                    <p><strong>Created:</strong> {{ template.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                                    <p><strong>Updated:</strong> {{ template.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <p><strong>Description:</strong></p>
+                                                    <p>{{ template.description or 'No description provided' }}</p>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <p><strong>Metrics:</strong></p>
+                                                    <div class="metrics-list">
+                                                        {% set metrics = template.metrics|fromjson %}
+                                                        {% for metric in metrics %}
+                                                        <span class="badge bg-primary me-2 mb-2">{{ metric }}</span>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Delete Template Modal -->
+                            <div class="modal fade" id="deleteTemplateModal{{ template.id }}" tabindex="-1" aria-labelledby="deleteTemplateModalLabel{{ template.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title" id="deleteTemplateModalLabel{{ template.id }}">
+                                                <i class="fas fa-exclamation-triangle"></i> Confirm Deletion
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to delete the template <strong>{{ template.name }}</strong> owned by <strong>{{ template.user.username }}</strong>?</p>
+                                            <p class="text-danger">This action cannot be undone and will affect all schedules and conditions using this template.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{{ url_for('reports.delete_template', template_id=template.id) }}" method="POST">
+                                                <button type="submit" class="btn btn-danger">Delete Template</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-file-code fa-3x text-muted mb-3"></i>
+            <p>No report templates have been created yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Template Statistics</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Most Used Date Range</h5>
+                        <div class="display-5 text-primary my-3">
+                            {% if templates %}
+                            {% set date_ranges = {} %}
+                            {% for template in templates %}
+                                {% if template.date_range in date_ranges %}
+                                    {% set _ = date_ranges.update({template.date_range: date_ranges[template.date_range] + 1}) %}
+                                {% else %}
+                                    {% set _ = date_ranges.update({template.date_range: 1}) %}
+                                {% endif %}
+                            {% endfor %}
+                            {% set most_used = {'range': '', 'count': 0} %}
+                            {% for range, count in date_ranges.items() %}
+                                {% if count > most_used.count %}
+                                    {% set _ = most_used.update({'range': range, 'count': count}) %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ most_used.range }}
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Most Active User</h5>
+                        <div class="display-5 text-success my-3">
+                            {% if templates %}
+                            {% set users = {} %}
+                            {% for template in templates %}
+                                {% if template.user.username in users %}
+                                    {% set _ = users.update({template.user.username: users[template.user.username] + 1}) %}
+                                {% else %}
+                                    {% set _ = users.update({template.user.username: 1}) %}
+                                {% endif %}
+                            {% endfor %}
+                            {% set most_active = {'user': '', 'count': 0} %}
+                            {% for user, count in users.items() %}
+                                {% if count > most_active.count %}
+                                    {% set _ = most_active.update({'user': user, 'count': count}) %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ most_active.user }}
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Most Used Metric</h5>
+                        <div class="display-5 text-info my-3">
+                            {% if templates %}
+                            {% set metrics_count = {'Impressions': 0, 'Clicks': 0, 'Cost': 0, 'Ctr': 0, 'Conversions': 0, 'ConversionRate': 0, 'CostPerConversion': 0} %}
+                            {% for template in templates %}
+                                {% set template_metrics = template.metrics|fromjson %}
+                                {% for metric in template_metrics %}
+                                    {% if metric in metrics_count %}
+                                        {% set _ = metrics_count.update({metric: metrics_count[metric] + 1}) %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                            {% set most_used_metric = {'name': '', 'count': 0} %}
+                            {% for metric, count in metrics_count.items() %}
+                                {% if count > most_used_metric.count %}
+                                    {% set _ = most_used_metric.update({'name': metric, 'count': count}) %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ most_used_metric.name }}
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#templatesTable').DataTable({
+            order: [[4, 'desc']],
+            responsive: true
+        });
+    });
+</script>
+{% endblock %}

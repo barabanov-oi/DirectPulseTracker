@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - DirectPulse{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="mb-4"><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+    </div>
+    <div class="col-md-4 text-md-end">
+        {% if not has_yandex_token %}
+        <a href="{{ url_for('auth.yandex_authorize') }}" class="btn btn-primary">
+            <i class="fas fa-link"></i> Connect Yandex Direct
+        </a>
+        {% else %}
+        <a href="{{ url_for('reports.generate_report_view') }}" class="btn btn-primary">
+            <i class="fas fa-file-chart-column"></i> Generate Report
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if not has_yandex_token %}
+<div class="alert alert-warning" role="alert">
+    <i class="fas fa-exclamation-triangle"></i> You need to connect your Yandex Direct account to use DirectPulse.
+    <a href="{{ url_for('auth.yandex_authorize') }}" class="alert-link">Connect now</a>.
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Quick Stats -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-simple"></i> Quick Stats</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <div class="bg-info rounded p-2 text-center" style="width: 48px; height: 48px;">
+                                    <i class="fas fa-file-alt text-white fa-lg"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="text-muted">Reports</div>
+                                <div class="h5">{{ recent_reports|length }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <div class="bg-success rounded p-2 text-center" style="width: 48px; height: 48px;">
+                                    <i class="fas fa-file-code text-white fa-lg"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="text-muted">Templates</div>
+                                <div class="h5">{{ templates|length }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <div class="bg-warning rounded p-2 text-center" style="width: 48px; height: 48px;">
+                                    <i class="fas fa-clock text-white fa-lg"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="text-muted">Active Schedules</div>
+                                <div class="h5">{{ schedules|selectattr('is_active', 'equalto', true)|list|length }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('reports.reports_list') }}" class="btn btn-sm btn-outline-primary">View All Reports</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Reports -->
+    <div class="col-md-8 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-file-alt"></i> Recent Reports</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_reports %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in recent_reports %}
+                            <tr>
+                                <td>{{ report.title }}</td>
+                                <td>{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    {% if report.schedule_id %}
+                                    <span class="badge bg-warning">Scheduled</span>
+                                    {% elif report.condition_id %}
+                                    <span class="badge bg-info">Condition</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Manual</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('reports.view_report', report_id=report.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                    <p>No reports generated yet.</p>
+                    <a href="{{ url_for('reports.generate_report_view') }}" class="btn btn-primary">Generate Your First Report</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Templates -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-file-code"></i> Report Templates</h5>
+            </div>
+            <div class="card-body">
+                {% if templates %}
+                <div class="list-group">
+                    {% for template in templates[:5] %}
+                    <a href="{{ url_for('reports.edit_template', template_id=template.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ template.name }}</h6>
+                            <small>{{ template.date_range }}</small>
+                        </div>
+                        <small class="text-muted">{{ template.description or 'No description' }}</small>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% if templates|length > 5 %}
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('reports.templates_list') }}" class="btn btn-sm btn-outline-primary">View All Templates</a>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-file-code fa-3x text-muted mb-3"></i>
+                    <p>No templates created yet.</p>
+                    <a href="{{ url_for('reports.create_template') }}" class="btn btn-primary">Create Your First Template</a>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('reports.create_template') }}" class="btn btn-sm btn-outline-primary">Create New Template</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedules & Conditions -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-clock"></i> Schedules & Conditions</h5>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="schedulesTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="schedules-tab" data-bs-toggle="tab" data-bs-target="#schedules" type="button" role="tab" aria-controls="schedules" aria-selected="true">
+                            <i class="fas fa-clock"></i> Schedules
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="conditions-tab" data-bs-toggle="tab" data-bs-target="#conditions" type="button" role="tab" aria-controls="conditions" aria-selected="false">
+                            <i class="fas fa-filter"></i> Conditions
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content p-3" id="schedulesTabContent">
+                    <div class="tab-pane fade show active" id="schedules" role="tabpanel" aria-labelledby="schedules-tab">
+                        {% if schedules %}
+                        <div class="list-group">
+                            {% for schedule in schedules[:5] %}
+                            <div class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ schedule.name }}</h6>
+                                    <div>
+                                        {% if schedule.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <small class="text-muted">{{ schedule.cron_expression }}</small>
+                                <small class="d-block">Template: {{ schedule.template.name }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if schedules|length > 5 %}
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('reports.schedules_list') }}" class="btn btn-sm btn-outline-primary">View All Schedules</a>
+                        </div>
+                        {% endif %}
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                            <p>No schedules created yet.</p>
+                            <a href="{{ url_for('reports.create_schedule') }}" class="btn btn-primary">Create Your First Schedule</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="tab-pane fade" id="conditions" role="tabpanel" aria-labelledby="conditions-tab">
+                        {% if conditions %}
+                        <div class="list-group">
+                            {% for condition in conditions[:5] %}
+                            <div class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ condition.name }}</h6>
+                                    <div>
+                                        {% if condition.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <small class="text-muted">Check every {{ condition.check_interval // 60 }} minutes</small>
+                                <small class="d-block">Template: {{ condition.template.name }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if conditions|length > 5 %}
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('reports.conditions_list') }}" class="btn btn-sm btn-outline-primary">View All Conditions</a>
+                        </div>
+                        {% endif %}
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-filter fa-3x text-muted mb-3"></i>
+                            <p>No conditions created yet.</p>
+                            <a href="{{ url_for('reports.create_condition') }}" class="btn btn-primary">Create Your First Condition</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="btn-group">
+                    <a href="{{ url_for('reports.create_schedule') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-clock"></i> New Schedule
+                    </a>
+                    <a href="{{ url_for('reports.create_condition') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-filter"></i> New Condition
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Initialize DataTables
+        if ($('.table').length > 0) {
+            $('.table').DataTable({
+                paging: false,
+                searching: false,
+                info: false,
+                order: [[1, 'desc']]
+            });
+        }
+    });
+</script>
+{% endblock %}

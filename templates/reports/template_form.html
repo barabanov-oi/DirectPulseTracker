@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Edit' if template else 'Create' }} Report Template - DirectPulse{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('reports.templates_list') }}">Templates</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ 'Edit' if template else 'Create' }} Template</li>
+            </ol>
+        </nav>
+        <h1><i class="fas fa-file-code"></i> {{ 'Edit' if template else 'Create' }} Report Template</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-edit"></i> Template Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('reports.edit_template', template_id=template.id) if template else url_for('reports.create_template') }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Template Name</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ template.name if template else '' }}" required>
+                        <div class="form-text">A descriptive name for your template</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ template.description if template else '' }}</textarea>
+                        <div class="form-text">Add details about what this template is for</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="date_range" class="form-label">Date Range</label>
+                        <select class="form-select" id="date_range" name="date_range">
+                            <option value="TODAY" {{ 'selected' if template and template.date_range == 'TODAY' else '' }}>Today</option>
+                            <option value="YESTERDAY" {{ 'selected' if template and template.date_range == 'YESTERDAY' else '' }}>Yesterday</option>
+                            <option value="LAST_7_DAYS" {{ 'selected' if template and template.date_range == 'LAST_7_DAYS' or not template else '' }}>Last 7 Days</option>
+                            <option value="LAST_30_DAYS" {{ 'selected' if template and template.date_range == 'LAST_30_DAYS' else '' }}>Last 30 Days</option>
+                            <option value="THIS_WEEK_MON_TODAY" {{ 'selected' if template and template.date_range == 'THIS_WEEK_MON_TODAY' else '' }}>This Week (Monday to Today)</option>
+                            <option value="THIS_MONTH" {{ 'selected' if template and template.date_range == 'THIS_MONTH' else '' }}>This Month</option>
+                        </select>
+                        <div class="form-text">Time period to collect data for</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Metrics to Include</label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="Impressions" name="Impressions" 
+                                          {{ 'checked' if template and template_metrics and 'Impressions' in template_metrics else 'checked' }}>
+                                    <label class="form-check-label" for="Impressions">
+                                        Impressions
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="Clicks" name="Clicks" 
+                                          {{ 'checked' if template and template_metrics and 'Clicks' in template_metrics else 'checked' }}>
+                                    <label class="form-check-label" for="Clicks">
+                                        Clicks
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="Cost" name="Cost" 
+                                          {{ 'checked' if template and template_metrics and 'Cost' in template_metrics else 'checked' }}>
+                                    <label class="form-check-label" for="Cost">
+                                        Cost
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="Ctr" name="Ctr" 
+                                          {{ 'checked' if template and template_metrics and 'Ctr' in template_metrics else 'checked' }}>
+                                    <label class="form-check-label" for="Ctr">
+                                        CTR (Click-Through Rate)
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="Conversions" name="Conversions" 
+                                          {{ 'checked' if template and template_metrics and 'Conversions' in template_metrics else '' }}>
+                                    <label class="form-check-label" for="Conversions">
+                                        Conversions
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="ConversionRate" name="ConversionRate" 
+                                          {{ 'checked' if template and template_metrics and 'ConversionRate' in template_metrics else '' }}>
+                                    <label class="form-check-label" for="ConversionRate">
+                                        Conversion Rate
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="CostPerConversion" name="CostPerConversion" 
+                                          {{ 'checked' if template and template_metrics and 'CostPerConversion' in template_metrics else '' }}>
+                                    <label class="form-check-label" for="CostPerConversion">
+                                        Cost Per Conversion
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-text">Select the metrics to include in your report</div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('reports.templates_list') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Templates
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> {{ 'Update' if template else 'Create' }} Template
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-lightbulb"></i> Tips</h5>
+            </div>
+            <div class="card-body">
+                <h6>Choosing Metrics</h6>
+                <p>Select metrics that are relevant to your campaign goals:</p>
+                <ul>
+                    <li><strong>Impressions & Clicks</strong>: Basic performance metrics</li>
+                    <li><strong>CTR</strong>: Indicates ad relevance</li>
+                    <li><strong>Cost</strong>: Shows your spending</li>
+                    <li><strong>Conversions & Cost per Conversion</strong>: Measure campaign ROI</li>
+                </ul>
+                
+                <h6>Date Ranges</h6>
+                <p>Choose a date range that makes sense for your reporting needs:</p>
+                <ul>
+                    <li><strong>Today/Yesterday</strong>: Quick daily checks</li>
+                    <li><strong>Last 7 Days</strong>: Weekly performance</li>
+                    <li><strong>Last 30 Days</strong>: Monthly trends</li>
+                    <li><strong>This Month</strong>: Month-to-date analysis</li>
+                </ul>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> After creating a template, you can use it for on-demand reports, scheduled reports, or conditional alerts.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Reports - DirectPulse Admin{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Admin Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Reports</li>
+            </ol>
+        </nav>
+        <h1><i class="fas fa-file-alt"></i> Manage Reports</h1>
+        <p class="text-muted">View and manage all user reports in the system</p>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-file-alt"></i> All Reports</h5>
+    </div>
+    <div class="card-body">
+        {% if reports %}
+        <div class="table-responsive">
+            <table class="table table-hover" id="reportsTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Title</th>
+                        <th>Date Range</th>
+                        <th>Source</th>
+                        <th>Created</th>
+                        <th>Telegram</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr>
+                        <td>{{ report.id }}</td>
+                        <td>{{ report.user.username }}</td>
+                        <td>{{ report.title }}</td>
+                        <td>{{ report.date_from }} to {{ report.date_to }}</td>
+                        <td>
+                            {% if report.schedule_id %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-clock"></i> Scheduled
+                            </span>
+                            {% elif report.condition_id %}
+                            <span class="badge bg-info">
+                                <i class="fas fa-filter"></i> Condition
+                            </span>
+                            {% else %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-user"></i> Manual
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            {% if report.sent_to_telegram %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check"></i> Sent
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-times"></i> Not Sent
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('reports.view_report', report_id=report.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteReportModal{{ report.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Delete Report Modal -->
+                            <div class="modal fade" id="deleteReportModal{{ report.id }}" tabindex="-1" aria-labelledby="deleteReportModalLabel{{ report.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title" id="deleteReportModalLabel{{ report.id }}">
+                                                <i class="fas fa-exclamation-triangle"></i> Confirm Deletion
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to delete the report <strong>{{ report.title }}</strong> owned by <strong>{{ report.user.username }}</strong>?</p>
+                                            <p class="text-danger">This action cannot be undone. The report data will be permanently removed.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{{ url_for('reports.delete_report', report_id=report.id) }}" method="POST">
+                                                <button type="submit" class="btn btn-danger">Delete Report</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+            <p>No reports have been generated in the system yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Report Statistics</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Reports by Source</h5>
+                        <canvas id="reportsBySourceChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Most Active Users</h5>
+                        <canvas id="reportsByUserChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Reports Timeline</h5>
+                        <canvas id="reportsTimelineChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Initialize DataTable
+        if ($('#reportsTable').length > 0) {
+            $('#reportsTable').DataTable({
+                order: [[5, 'desc']], // Sort by creation date
+                responsive: true
+            });
+        }
+        
+        // Only initialize charts if we have reports
+        {% if reports %}
+        // Reports by Source Chart
+        const reportsBySourceCtx = document.getElementById('reportsBySourceChart').getContext('2d');
+        
+        // Count reports by source
+        let scheduledCount = {{ reports|selectattr('schedule_id', 'defined')|list|length }};
+        let conditionCount = {{ reports|selectattr('condition_id', 'defined')|list|length }};
+        let manualCount = {{ reports|rejectattr('schedule_id', 'defined')|rejectattr('condition_id', 'defined')|list|length }};
+        
+        const reportsBySourceChart = new Chart(reportsBySourceCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Scheduled', 'Conditional', 'Manual'],
+                datasets: [{
+                    data: [scheduledCount, conditionCount, manualCount],
+                    backgroundColor: ['#ffc107', '#17a2b8', '#28a745']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // Reports by User Chart
+        const reportsByUserCtx = document.getElementById('reportsByUserChart').getContext('2d');
+        
+        // Count reports by user
+        {% set user_report_counts = {} %}
+        {% for report in reports %}
+            {% if report.user.username in user_report_counts %}
+                {% set _ = user_report_counts.update({report.user.username: user_report_counts[report.user.username] + 1}) %}
+            {% else %}
+                {% set _ = user_report_counts.update({report.user.username: 1}) %}
+            {% endif %}
+        {% endfor %}
+        
+        // Sort and get top 5 users by report count
+        {% set sorted_users = user_report_counts.items()|sort(attribute=1, reverse=true)|list %}
+        {% set top_users = sorted_users[:5] %}
+        
+        const reportsByUserChart = new Chart(reportsByUserCtx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    {% for username, count in top_users %}
+                        '{{ username }}',
+                    {% endfor %}
+                ],
+                datasets: [{
+                    label: 'Reports',
+                    data: [
+                        {% for username, count in top_users %}
+                            {{ count }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: '#0d6efd'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Reports Timeline Chart (last 7 days)
+        const reportsTimelineCtx = document.getElementById('reportsTimelineChart').getContext('2d');
+        
+        // Get dates for the last 7 days
+        const last7Days = [];
+        const reportCounts = [];
+        
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const formattedDate = date.toISOString().split('T')[0];
+            last7Days.push(formattedDate);
+            
+            // Count reports for this date
+            let count = 0;
+            {% for report in reports %}
+                if ('{{ report.created_at.strftime("%Y-%m-%d") }}' === formattedDate) {
+                    count++;
+                }
+            {% endfor %}
+            reportCounts.push(count);
+        }
+        
+        const reportsTimelineChart = new Chart(reportsTimelineCtx, {
+            type: 'line',
+            data: {
+                labels: last7Days,
+                datasets: [{
+                    label: 'Reports',
+                    data: reportCounts,
+                    borderColor: '#6f42c1',
+                    backgroundColor: 'rgba(111, 66, 193, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+        {% endif %}
+    });
+</script>
+{% endblock %}

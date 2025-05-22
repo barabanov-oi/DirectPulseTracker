@@ -1,0 +1,221 @@
+/**
+ * DirectPulse - Custom CSS Styles
+ * Minimal custom styling to complement Bootstrap dark theme
+ */
+
+/* General styling */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* Custom card styling */
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.25);
+}
+
+/* Metric cards with hover effect */
+.metric-card {
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Campaign table styling */
+.table th {
+    border-top: none;
+}
+
+/* Report summary styling */
+.report-summary {
+    white-space: pre-line;
+}
+
+/* Badge styling */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* Condition builder styling */
+.rule-item {
+    transition: all 0.2s ease;
+}
+
+.rule-item:hover {
+    border-color: var(--bs-primary);
+}
+
+.condition-display {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Dashboard card improvements */
+.dashboard-stat-card {
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.dashboard-stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.dashboard-stat-card .card-body {
+    padding: 1.5rem;
+}
+
+/* Button hover effects */
+.btn {
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Form styling */
+.form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* Chart containers */
+.chart-container {
+    position: relative;
+    min-height: 250px;
+}
+
+/* Error message styling */
+.form-error {
+    color: var(--bs-danger);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Login and register form improvements */
+.auth-card {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+/* Markdown content styling for report summaries */
+.markdown-content {
+    white-space: pre-line;
+    line-height: 1.6;
+}
+
+.markdown-content .badge {
+    vertical-align: middle;
+}
+
+/* Breadcrumb styling */
+.breadcrumb {
+    padding: 0.5rem 0;
+    margin-bottom: 1rem;
+}
+
+/* DataTables improvements */
+.dataTables_wrapper .dataTables_length, 
+.dataTables_wrapper .dataTables_filter {
+    margin-bottom: 1rem;
+}
+
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    margin-top: 1rem;
+}
+
+/* Custom scrollbar for better visibility */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* Loading state indicators */
+.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.loading::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+    z-index: 1001;
+}
+
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    h1 {
+        font-size: 1.75rem;
+    }
+    
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        margin-bottom: 0.25rem;
+        border-radius: 0.25rem !important;
+    }
+}

@@ -1,0 +1,333 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ report.title }} - DirectPulse{% endblock %}
+
+{% block styles %}
+<style>
+    .metric-card {
+        transition: all 0.3s ease;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('reports.reports_list') }}">Reports</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ report.title }}</li>
+            </ol>
+        </nav>
+        <h1 class="mb-3">{{ report.title }}</h1>
+        <p class="text-muted">
+            <i class="fas fa-calendar-alt"></i> Period: {{ report.date_from }} to {{ report.date_to }}
+            <span class="ms-3"><i class="fas fa-clock"></i> Generated: {{ report.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+        </p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a href="{{ url_for('reports.export_report', report_id=report.id) }}" class="btn btn-outline-primary">
+            <i class="fas fa-file-csv"></i> Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Report Summary Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Report Summary</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% if report.summary %}
+                <div class="col-md-8">
+                    <div class="markdown-content">
+                        {{ report.summary|replace('\n', '<br>')|safe }}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <canvas id="costClicksChart" height="200"></canvas>
+                </div>
+            {% else %}
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                    <p>No summary available for this report.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="row mb-4">
+    {% if report_data.totals %}
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white h-100 metric-card shadow-sm">
+            <div class="card-body">
+                <h6 class="card-title text-white-50"><i class="fas fa-money-bill"></i> Total Cost</h6>
+                <h3 class="card-text">{{ "%.2f"|format(report_data.totals.Cost|float) }} ₽</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info h-100 metric-card shadow-sm">
+            <div class="card-body">
+                <h6 class="card-title text-white-50"><i class="fas fa-mouse-pointer"></i> Total Clicks</h6>
+                <h3 class="card-text">{{ report_data.totals.Clicks|int }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success h-100 metric-card shadow-sm">
+            <div class="card-body">
+                <h6 class="card-title text-white-50"><i class="fas fa-percent"></i> CTR</h6>
+                <h3 class="card-text">{{ "%.2f"|format(report_data.totals.Ctr|float) }}%</h3>
+            </div>
+        </div>
+    </div>
+    {% if report_data.totals.Conversions is defined %}
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning h-100 metric-card shadow-sm">
+            <div class="card-body">
+                <h6 class="card-title text-white-50"><i class="fas fa-bullseye"></i> Conversions</h6>
+                <h3 class="card-text">{{ report_data.totals.Conversions|int }}</h3>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-md-3 mb-3">
+        <div class="card bg-secondary h-100 metric-card shadow-sm">
+            <div class="card-body">
+                <h6 class="card-title text-white-50"><i class="fas fa-eye"></i> Impressions</h6>
+                <h3 class="card-text">{{ report_data.totals.Impressions|int }}</h3>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+
+<!-- Top Campaigns -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-trophy"></i> Top Campaigns</h5>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="topCampaignsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="by-cost-tab" data-bs-toggle="tab" data-bs-target="#by-cost" type="button" role="tab" aria-controls="by-cost" aria-selected="true">By Cost</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="by-clicks-tab" data-bs-toggle="tab" data-bs-target="#by-clicks" type="button" role="tab" aria-controls="by-clicks" aria-selected="false">By Clicks</button>
+                    </li>
+                    {% if report_data.top_campaigns.by_conversions|length > 0 %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="by-conversions-tab" data-bs-toggle="tab" data-bs-target="#by-conversions" type="button" role="tab" aria-controls="by-conversions" aria-selected="false">By Conversions</button>
+                    </li>
+                    {% endif %}
+                </ul>
+                <div class="tab-content p-3" id="topCampaignsTabContent">
+                    <div class="tab-pane fade show active" id="by-cost" role="tabpanel" aria-labelledby="by-cost-tab">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Campaign</th>
+                                                <th>Cost</th>
+                                                <th>Clicks</th>
+                                                <th>CTR</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for campaign in report_data.top_campaigns.by_cost %}
+                                            <tr>
+                                                <td>{{ campaign.Name }}</td>
+                                                <td>{{ "%.2f"|format(campaign.Cost|float) }} ₽</td>
+                                                <td>{{ campaign.Clicks|int }}</td>
+                                                <td>{{ "%.2f"|format(campaign.Ctr|float) }}%</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <canvas id="topCostChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="by-clicks" role="tabpanel" aria-labelledby="by-clicks-tab">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Campaign</th>
+                                                <th>Clicks</th>
+                                                <th>Cost</th>
+                                                <th>CTR</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for campaign in report_data.top_campaigns.by_clicks %}
+                                            <tr>
+                                                <td>{{ campaign.Name }}</td>
+                                                <td>{{ campaign.Clicks|int }}</td>
+                                                <td>{{ "%.2f"|format(campaign.Cost|float) }} ₽</td>
+                                                <td>{{ "%.2f"|format(campaign.Ctr|float) }}%</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <canvas id="topClicksChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    {% if report_data.top_campaigns.by_conversions|length > 0 %}
+                    <div class="tab-pane fade" id="by-conversions" role="tabpanel" aria-labelledby="by-conversions-tab">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Campaign</th>
+                                                <th>Conversions</th>
+                                                <th>Cost</th>
+                                                <th>Conv. Rate</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for campaign in report_data.top_campaigns.by_conversions %}
+                                            <tr>
+                                                <td>{{ campaign.Name }}</td>
+                                                <td>{{ campaign.Conversions|int }}</td>
+                                                <td>{{ "%.2f"|format(campaign.Cost|float) }} ₽</td>
+                                                <td>{{ "%.2f"|format(campaign.ConversionRate|float) }}%</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <canvas id="topConversionsChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- All Campaigns Data -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-table"></i> All Campaigns</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="campaignsTable">
+                <thead>
+                    <tr>
+                        <th>Campaign</th>
+                        <th>Cost</th>
+                        <th>Clicks</th>
+                        <th>Impressions</th>
+                        <th>CTR</th>
+                        {% if report_data.campaigns and report_data.campaigns|length > 0 and 'Conversions' in report_data.campaigns[0] %}
+                        <th>Conversions</th>
+                        <th>Conv. Rate</th>
+                        <th>Cost/Conv.</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for campaign in report_data.campaigns %}
+                    <tr>
+                        <td>{{ campaign.Name }}</td>
+                        <td>{{ "%.2f"|format(campaign.Cost|float) }} ₽</td>
+                        <td>{{ campaign.Clicks|int }}</td>
+                        <td>{{ campaign.Impressions|int }}</td>
+                        <td>{{ "%.2f"|format(campaign.Ctr|float) }}%</td>
+                        {% if 'Conversions' in campaign %}
+                        <td>{{ campaign.Conversions|int }}</td>
+                        <td>{{ "%.2f"|format(campaign.ConversionRate|float) }}%</td>
+                        <td>{{ "%.2f"|format(campaign.CostPerConversion|float) }} ₽</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    {% if report_data.totals %}
+                    <tr class="table-primary">
+                        <th>{{ report_data.totals.Name }}</th>
+                        <th>{{ "%.2f"|format(report_data.totals.Cost|float) }} ₽</th>
+                        <th>{{ report_data.totals.Clicks|int }}</th>
+                        <th>{{ report_data.totals.Impressions|int }}</th>
+                        <th>{{ "%.2f"|format(report_data.totals.Ctr|float) }}%</th>
+                        {% if 'Conversions' in report_data.totals %}
+                        <th>{{ report_data.totals.Conversions|int }}</th>
+                        <th>{{ "%.2f"|format(report_data.totals.ConversionRate|float) }}%</th>
+                        <th>{{ "%.2f"|format(report_data.totals.CostPerConversion|float) }} ₽</th>
+                        {% endif %}
+                    </tr>
+                    {% endif %}
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Store report data for charts -->
+<script>
+    const reportData = {{ report_data|tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    $(document).ready(function() {
+        // Initialize DataTable
+        $('#campaignsTable').DataTable({
+            order: [[1, 'desc']],
+            responsive: true,
+            dom: 'Bfrtip',
+            buttons: [
+                'copy', 'csv', 'excel', 'pdf', 'print'
+            ]
+        });
+        
+        // Initialize charts
+        if (reportData.totals) {
+            createCostClicksChart('costClicksChart', reportData.totals);
+            
+            if (reportData.top_campaigns.by_cost.length > 0) {
+                createTopCampaignsChart('topCostChart', reportData.top_campaigns.by_cost, 'Cost', '₽');
+            }
+            
+            if (reportData.top_campaigns.by_clicks.length > 0) {
+                createTopCampaignsChart('topClicksChart', reportData.top_campaigns.by_clicks, 'Clicks');
+            }
+            
+            if (reportData.top_campaigns.by_conversions && reportData.top_campaigns.by_conversions.length > 0) {
+                createTopCampaignsChart('topConversionsChart', reportData.top_campaigns.by_conversions, 'Conversions');
+            }
+        }
+    });
+</script>
+{% endblock %}
