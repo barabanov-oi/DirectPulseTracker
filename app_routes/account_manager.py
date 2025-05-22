@@ -59,12 +59,20 @@ def account_details(token_id):
     
     # Получаем информацию о кампаниях
     campaigns = []
+    top_campaigns = []
     try:
         # Получаем API-клиент для этого токена
         api_client = connection_manager.get_connection(token.id)
         if api_client:
             campaigns_data = api_client.get_campaign_details()
             campaigns = campaigns_data if campaigns_data else []
+            
+            # Получаем ТОП-10 активных кампаний с расходами за последние 7 дней
+            try:
+                top_campaigns = api_client.get_top_active_campaigns(limit=10, days=7)
+            except Exception as e:
+                logger.error(f"Error getting top active campaigns: {e}")
+                # Продолжаем выполнение даже если не удалось получить ТОП кампаний
     except Exception as e:
         logger.exception(f"Error getting campaign details: {e}")
         flash('Ошибка при получении данных о кампаниях', 'danger')
@@ -73,6 +81,7 @@ def account_details(token_id):
                           token=token,
                           user=user,
                           campaigns=campaigns,
+                          top_campaigns=top_campaigns,
                           title=f'Аккаунт: {token.account_name or token.client_login}')
 
 @account_manager.route('/set-default/<int:token_id>', methods=['POST'])

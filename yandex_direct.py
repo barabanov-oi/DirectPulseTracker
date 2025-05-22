@@ -675,15 +675,28 @@ class YandexDirectAPI:
             logger.exception(f"Error processing campaign stats: {e}")
             return None
     
-    def get_campaign_stats_dataframe(self, campaign_ids=None, date_from=None, date_to=None):
+    def get_campaign_stats_dataframe(self, campaign_ids=None, date_from=None, date_to=None, date_range=None):
         """
         Получить статистику по кампаниям в виде pandas DataFrame
         
+        Args:
+            campaign_ids: ID кампании или список ID кампаний
+            date_from: Дата начала в формате YYYY-MM-DD
+            date_to: Дата окончания в формате YYYY-MM-DD
+            date_range: Предопределенный период (TODAY, YESTERDAY, LAST_7_DAYS и т.д.)
+            
         Returns:
             pandas.DataFrame: Статистика по кампаниям
         """
+        # Если указан date_range, используем его
+        if date_range:
+            return self._get_stats_report(
+                report_type='CAMPAIGN_PERFORMANCE_REPORT',
+                date_range_type=date_range,
+                campaign_ids=campaign_ids
+            )
         # Если даты указаны, используем CUSTOM_DATE
-        if date_from and date_to:
+        elif date_from and date_to:
             return self._get_stats_report(
                 report_type='CAMPAIGN_PERFORMANCE_REPORT',
                 date_range_type='CUSTOM_DATE',
@@ -698,6 +711,143 @@ class YandexDirectAPI:
                 date_range_type='LAST_7_DAYS',
                 campaign_ids=campaign_ids
             )
+            
+    def get_top_active_campaigns(self, limit=10, days=7):
+        """
+        Получить ТОП-N активных кампаний с наибольшими расходами за последние X дней
+        
+        Args:
+            limit: Количество кампаний для вывода (по умолчанию 10)
+            days: Количество дней для анализа (по умолчанию 7)
+            
+        Returns:
+            list: Список словарей с данными по кампаниям
+        """
+        # Получаем все кампании
+        all_campaigns = self.get_campaigns(include_archived=False)
+        if not all_campaigns:
+            return []
+            
+        # Определяем период для статистики
+        date_range = 'LAST_7_DAYS'
+        if days != 7:
+            if days == 1:
+                date_range = 'TODAY'
+            elif days == 30:
+                date_range = 'LAST_30_DAYS'
+            elif days == 90:
+                date_range = 'LAST_90_DAYS'
+        
+        # Получаем статистику за указанный период
+        stats_df = self.get_campaign_stats_dataframe(date_range=date_range)
+        
+        # Если статистика пустая, возвращаем кампании без статистики
+        if stats_df.empty:
+            # Возвращаем первые N кампаний
+            result = []
+            for i, campaign in enumerate(all_campaigns):
+                if i >= limit:
+                    break
+                result.append({
+                    'id': campaign.get('Id', '0'),
+                    'name': campaign.get('Name', 'Неизвестная кампания'),
+                    'state': campaign.get('State', 'UNKNOWN'),
+                    'cost': 0.0,
+                    'clicks': 0,
+                    'impressions': 0,
+                    'ctr': 0.0
+                })
+            return result
+            
+        # Группируем статистику по кампаниям и считаем суммарные показатели
+        try:
+            # Формируем результат
+            result = []
+            
+            # Создаем словарь кампаний для быстрого доступа
+            campaign_dict = {}
+            for campaign in all_campaigns:
+                campaign_id = campaign.get('Id')
+                if campaign_id:
+                    campaign_dict[campaign_id] = campaign
+            
+            # Обрабатываем данные статистики по кампаниям
+            campaign_stats = {}
+            
+            # Определяем имена колонок
+            campaign_id_col = next((col for col in stats_df.columns if 'campaign' in col.lower() and 'id' in col.lower()), None)
+            if not campaign_id_col:
+                logger.warning("CampaignId column not found in stats dataframe")
+                return []
+                
+            # Агрегируем данные по кампаниям
+            for _, row in stats_df.iterrows():
+                try:
+                    campaign_id = str(row[campaign_id_col])
+                    
+                    if campaign_id not in campaign_stats:
+                        campaign_stats[campaign_id] = {
+                            'cost': 0.0,
+                            'clicks': 0,
+                            'impressions': 0
+                        }
+                    
+                    # Добавляем показатели
+                    if 'Cost' in row:
+                        campaign_stats[campaign_id]['cost'] += float(row['Cost'])
+                    if 'Clicks' in row:
+                        campaign_stats[campaign_id]['clicks'] += int(row['Clicks'])
+                    if 'Impressions' in row:
+                        campaign_stats[campaign_id]['impressions'] += int(row['Impressions'])
+                except Exception as e:
+                    logger.error(f"Error processing campaign stats row: {e}")
+                    continue
+            
+            # Формируем результат и сортируем по расходам
+            for campaign_id, stats in campaign_stats.items():
+                campaign_data = campaign_dict.get(campaign_id)
+                if not campaign_data:
+                    continue
+                
+                # Вычисляем CTR
+                ctr = 0.0
+                if stats['impressions'] > 0 and stats['clicks'] > 0:
+                    ctr = (stats['clicks'] / stats['impressions']) * 100
+                
+                # Формируем запись
+                campaign_info = {
+                    'id': campaign_id,
+                    'name': campaign_data.get('Name', f'Кампания {campaign_id}'),
+                    'state': campaign_data.get('State', 'UNKNOWN'),
+                    'cost': stats['cost'],
+                    'clicks': stats['clicks'],
+                    'impressions': stats['impressions'],
+                    'ctr': ctr
+                }
+                
+                result.append(campaign_info)
+            
+            # Сортируем по расходам и ограничиваем количество
+            result.sort(key=lambda x: x['cost'], reverse=True)
+            return result[:limit]
+                
+        except Exception as e:
+            logger.exception(f"Error processing campaign stats: {e}")
+            # В случае ошибки возвращаем список кампаний без статистики
+            result = []
+            for i, campaign in enumerate(all_campaigns):
+                if i >= limit:
+                    break
+                result.append({
+                    'id': campaign.get('Id', '0'),
+                    'name': campaign.get('Name', 'Неизвестная кампания'),
+                    'state': campaign.get('State', 'UNKNOWN'),
+                    'cost': 0.0,
+                    'clicks': 0,
+                    'impressions': 0,
+                    'ctr': 0.0
+                })
+            return result
     
     def _init_api_client(self):
         """Инициализация API клиента tapi_yandex_direct"""
