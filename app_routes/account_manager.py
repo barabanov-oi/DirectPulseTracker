@@ -14,7 +14,6 @@ account_manager = Blueprint('account_manager', __name__, url_prefix='/account-ma
 
 @account_manager.route('/')
 @login_required
-@admin_required
 def index():
     """Главная страница менеджера аккаунтов"""
     # Получаем всех пользователей и их токены
@@ -44,7 +43,6 @@ def index():
 
 @account_manager.route('/account/<int:token_id>')
 @login_required
-@admin_required
 def account_details(token_id):
     """Страница с детальной информацией об аккаунте"""
     token = YandexToken.query.get_or_404(token_id)
@@ -70,7 +68,6 @@ def account_details(token_id):
 
 @account_manager.route('/set-default/<int:token_id>', methods=['POST'])
 @login_required
-@admin_required
 def set_default_account(token_id):
     """Установить аккаунт по умолчанию для пользователя"""
     token = YandexToken.query.get_or_404(token_id)
@@ -90,7 +87,6 @@ def set_default_account(token_id):
 
 @account_manager.route('/rename/<int:token_id>', methods=['POST'])
 @login_required
-@admin_required
 def rename_account(token_id):
     """Переименовать аккаунт"""
     token = YandexToken.query.get_or_404(token_id)
@@ -107,7 +103,6 @@ def rename_account(token_id):
 
 @account_manager.route('/toggle-active/<int:token_id>', methods=['POST'])
 @login_required
-@admin_required
 def toggle_active(token_id):
     """Включить/выключить аккаунт"""
     token = YandexToken.query.get_or_404(token_id)
@@ -129,7 +124,6 @@ def toggle_active(token_id):
 
 @account_manager.route('/delete/<int:token_id>', methods=['POST'])
 @login_required
-@admin_required
 def delete_account(token_id):
     """Удалить аккаунт"""
     token = YandexToken.query.get_or_404(token_id)
