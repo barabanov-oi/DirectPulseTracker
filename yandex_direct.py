@@ -271,13 +271,14 @@ def get_user_client(user_id):
     return YandexDirectAPI(token)
 
 
-def store_token_for_user(user_id, token_data):
+def store_token_for_user(user_id, token_data, client_login=None):
     """
     Store or update OAuth token for a user
     
     Args:
         user_id: User ID
         token_data: Token response from the API
+        client_login: Optional client login (for manual token entry)
         
     Returns:
         YandexToken: The stored token object
@@ -293,6 +294,8 @@ def store_token_for_user(user_id, token_data):
         existing_token.refresh_token = token_data.get('refresh_token', existing_token.refresh_token)
         existing_token.expires_at = expires_at
         existing_token.updated_at = datetime.utcnow()
+        if client_login:
+            existing_token.client_login = client_login
         token = existing_token
     else:
         # Create new token
@@ -301,7 +304,8 @@ def store_token_for_user(user_id, token_data):
             access_token=token_data['access_token'],
             refresh_token=token_data['refresh_token'],
             expires_at=expires_at,
-            token_type=token_data.get('token_type', 'Bearer')
+            token_type=token_data.get('token_type', 'Bearer'),
+            client_login=client_login
         )
         db.session.add(token)
     
