@@ -6,19 +6,12 @@ from routes import reports
 from routes import admin
 from routes import diagnostics
 
-# Register blueprints with app
-app.register_blueprint(main.main_bp)
-app.register_blueprint(auth.auth_bp)
-app.register_blueprint(reports.reports_bp)
-app.register_blueprint(admin.admin_bp)
-app.register_blueprint(diagnostics.diagnostics_bp)
-
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Note: We don't need to register blueprints here since they're already
-# registered at the end of each route file
+# No need to register blueprints here since they're already registered 
+# at the end of each route file
 
 logger.info("Application initialized and ready")
 
