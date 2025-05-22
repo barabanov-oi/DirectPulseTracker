@@ -184,19 +184,25 @@ def generate_report_view():
             flash('Access denied', 'danger')
             return redirect(url_for('reports.generate_report_view'))
         
-        # Get user's Yandex Direct client
-        yandex_client = get_user_client(current_user.id)
-        
-        if not yandex_client:
-            flash('Connect your Yandex Direct account first', 'warning')
+        try:
+            # Get user's Yandex Direct client
+            yandex_client = get_user_client(current_user.id)
+            
+            if not yandex_client:
+                flash('Подключите аккаунт Яндекс Директ', 'warning')
+                return redirect(url_for('auth.yandex_authorize'))
+            
+            # Generate the report
+            report_data, summary = generate_report(yandex_client, template)
+            
+            if not report_data:
+                flash('Не удалось сгенерировать отчет - нет данных за выбранный период', 'warning')
+                return redirect(url_for('reports.generate_report_view'))
+                
+        except Exception as e:
+            logger.error(f"Error generating report: {str(e)}")
+            flash('Ошибка доступа к API Яндекс Директ. Пожалуйста, переподключите аккаунт.', 'danger')
             return redirect(url_for('auth.yandex_authorize'))
-        
-        # Generate the report
-        report_data, summary = generate_report(yandex_client, template)
-        
-        if not report_data:
-            flash('Failed to generate report', 'danger')
-            return redirect(url_for('reports.generate_report_view'))
         
         # Create report record
         date_from = datetime.strptime(report_data['date_from'], '%Y-%m-%d').date()
