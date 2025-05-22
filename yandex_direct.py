@@ -992,7 +992,9 @@ class YandexDirectAPI:
         
         try:
             # Получаем отчет через tapi_yandex_direct
-            report_result = self.api_client.reports().get(body)
+            # Преобразуем body в JSON строку, как ожидает API
+            body_json = json.dumps(body)
+            report_result = self.api_client.reports().get(body_json)
             
             # Проверяем результат
             if not report_result or not report_result.get('data'):
