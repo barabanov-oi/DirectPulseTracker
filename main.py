@@ -1,10 +1,13 @@
 import logging
+import sys
+from pathlib import Path
+
+# Добавляем текущую директорию в путь для импортов
+sys.path.insert(0, str(Path(__file__).parent))
+
 from app import app
-from routes import main
-from routes import auth
-from routes import reports
-from routes import admin
-from routes import diagnostics
+# Импортируем из переименованной папки app_routes
+from app_routes import main, auth, reports, admin, diagnostics
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
