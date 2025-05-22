@@ -395,12 +395,21 @@ class YandexDirectAPI:
             states = ['ON', 'OFF', 'SUSPENDED', 'ENDED'] if not include_archived else None
             
             # Получаем кампании через tapi_yandex_direct
-            # Обратите внимание: здесь используется другой формат запроса, совместимый с библиотекой
-            campaigns = self.api_client.campaigns().get(states=states)
+            # Создаем правильный запрос с SelectionCriteria
+            params = {}
+            if states:
+                params = {
+                    "SelectionCriteria": {"States": states}
+                }
             
-            return {
-                'Campaigns': campaigns['Campaigns'] if 'Campaigns' in campaigns else []
-            }
+            # Выполняем запрос
+            campaigns = self.api_client.campaigns().get(params)
+            
+            # Возвращаем результат в ожидаемом формате
+            if campaigns and 'result' in campaigns and 'Campaigns' in campaigns['result']:
+                return campaigns['result']['Campaigns']
+            else:
+                return []
             
         except YandexDirectApiError as e:
             logger.error(f"Yandex Direct API error: {e}")
