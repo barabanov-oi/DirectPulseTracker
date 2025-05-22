@@ -387,24 +387,13 @@ class YandexDirectAPI:
             return None
             
         try:
-            # Подготовка фильтра для кампаний
-            selection_criteria = {}
-            if not include_archived:
-                selection_criteria = {
-                    'States': ['ON', 'OFF', 'SUSPENDED', 'ENDED']  # Исключаем ARCHIVED
-                }
-            
-            # Указываем поля, которые нужно получить
-            field_names = [
-                'Id', 'Name', 'Status', 'State', 'Type', 
-                'DailyBudget', 'Statistics'
-            ]
+            # Для tapi_yandex_direct версии 2 параметры указываются по-другому
+            # Создаем запрос в правильном формате
+            states = ['ON', 'OFF', 'SUSPENDED', 'ENDED'] if not include_archived else None
             
             # Получаем кампании через tapi_yandex_direct
-            campaigns = self.api_client.campaigns().get(
-                SelectionCriteria=selection_criteria,
-                FieldNames=field_names
-            )
+            # Обратите внимание: здесь используется другой формат запроса, совместимый с библиотекой
+            campaigns = self.api_client.campaigns().get(states=states)
             
             return {
                 'Campaigns': campaigns['Campaigns'] if 'Campaigns' in campaigns else []
@@ -501,34 +490,57 @@ class YandexDirectAPI:
                 'Cost', 'AvgCpc', 'Conversions', 'ConversionRate', 'CostPerConversion'
             ]
             
-        # Подготовка параметров для запроса отчета
-        body = {
-            'SelectionCriteria': {},
-            'FieldNames': field_names,
-            'ReportName': f'{report_type} {date_range_type} {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
-            'ReportType': report_type,
-            'DateRangeType': date_range_type,
-            'Format': 'TSV',
-            'IncludeVAT': 'YES',
-            'IncludeDiscount': 'YES'
-        }
-        
-        # Если указан CUSTOM_DATE, добавляем даты
-        if date_range_type == 'CUSTOM_DATE':
-            if date_from and date_to:
-                body['DateFrom'] = date_from
-                body['DateTo'] = date_to
-            else:
-                logger.error("For CUSTOM_DATE range both date_from and date_to must be specified")
-                return pd.DataFrame()
-                
-        # Добавляем фильтр по кампаниям, если указан
-        if campaign_ids:
-            body['SelectionCriteria']['CampaignIds'] = campaign_ids
-        
+        # Для tapi_yandex_direct версии 2 используется другой формат запроса
         try:
-            # Получаем отчет через tapi_yandex_direct
-            report_result = self.api_client.reports().get(body)
+            # Настраиваем параметры отчета
+            report_options = {
+                'report_type': report_type,
+                'fields': field_names,
+                'period': date_range_type
+            }
+            
+            # Если указан CUSTOM_DATE, добавляем даты
+            if date_range_type == 'CUSTOM_DATE':
+                if date_from and date_to:
+                    report_options['date_from'] = date_from
+                    report_options['date_to'] = date_to
+                else:
+                    logger.error("For CUSTOM_DATE range both date_from and date_to must be specified")
+                    return pd.DataFrame()
+                    
+            # Добавляем фильтр по кампаниям, если указан
+            if campaign_ids:
+                report_options['filter'] = {'CampaignId': campaign_ids}
+                
+            # В библиотеке tapi_yandex_direct отчеты получаются по-другому
+            # Нам нужно использовать метод reports().get() и правильно форматировать запрос
+            from tapi_yandex_direct.exceptions import YandexDirectApiError
+            
+            # Форматируем запрос в формате JSON/dict, как ожидает API
+            report_params = {
+                'ReportDefinition': {
+                    'ReportName': f'Report {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
+                    'ReportType': report_type,
+                    'DateRangeType': date_range_type,
+                    'Format': 'TSV',
+                    'FieldNames': field_names,
+                }
+            }
+            
+            # Добавляем SelectionCriteria если есть фильтры
+            if campaign_ids:
+                report_params['ReportDefinition']['SelectionCriteria'] = {
+                    'CampaignIds': campaign_ids
+                }
+                
+            # Если указан CUSTOM_DATE, добавляем даты
+            if date_range_type == 'CUSTOM_DATE':
+                if date_from and date_to:
+                    report_params['ReportDefinition']['DateFrom'] = date_from
+                    report_params['ReportDefinition']['DateTo'] = date_to
+                    
+            # Получаем отчет
+            report_result = self.api_client.reports().download(report_params)
             
             # Проверяем результат
             if not report_result or not report_result.get('data'):
