@@ -273,6 +273,32 @@ class YandexDirectConnectionManager:
 # Создаем глобальный экземпляр менеджера подключений
 connection_manager = YandexDirectConnectionManager()
 
+# Вспомогательные функции для работы с Яндекс Директом
+
+def get_user_client(user_id):
+    """
+    Get a YandexDirectAPI client for a specific user
+    
+    Args:
+        user_id: User ID
+        
+    Returns:
+        YandexDirectAPI: Configured API client or None
+    """
+    return connection_manager.get_connection_for_user(user_id)
+    
+def get_client_for_token(token_id):
+    """
+    Get a YandexDirectAPI client for a specific token
+    
+    Args:
+        token_id: Token ID
+        
+    Returns:
+        YandexDirectAPI: Configured API client or None
+    """
+    return connection_manager.get_connection(token_id)
+
 
 class YandexDirectAPI:
     """Class to interact with Yandex Direct API using tapi_yandex_direct"""
@@ -291,6 +317,323 @@ class YandexDirectAPI:
         
         if token and token.access_token:
             self._init_api_client()
+    
+    def _init_api_client(self):
+        """Инициализация API клиента tapi_yandex_direct"""
+        if not self.token:
+            return False
+            
+        # Если токен истек, пытаемся обновить его
+        if self.token.is_expired():
+            if not self.ensure_fresh_token():
+                return False
+        
+        # Создаем API клиент с доступом к нужным сервисам
+        try:
+            self.api_client = YandexDirect(
+                access_token=self.token.access_token,
+                login=self.token.client_login,
+                is_sandbox=False,
+                # Использовать язык по умолчанию
+                language='ru'
+            )
+            return True
+        except Exception as e:
+            logger.exception(f"Error initializing YandexDirect API client: {e}")
+            return False
+    
+    def ensure_fresh_token(self):
+        """
+        Проверяет, не истек ли токен, и обновляет его при необходимости
+        
+        Returns:
+            bool: True, если токен валиден, False - в противном случае
+        """
+        if not self.token:
+            logger.error("No token available")
+            return False
+        
+        # Проверяем, истек ли токен
+        if self.token.is_expired():
+            logger.info(f"Token for {self.token.client_login} is expired, refreshing...")
+            
+            # Обновляем токен через менеджер подключений
+            token_data = connection_manager.refresh_token(self.token.refresh_token)
+            if not token_data:
+                return False
+            
+            # Обновляем токен в базе данных
+            self.token.access_token = token_data['access_token']
+            self.token.refresh_token = token_data.get('refresh_token', self.token.refresh_token)
+            self.token.expires_at = datetime.utcnow() + timedelta(seconds=token_data['expires_in'])
+            self.token.updated_at = datetime.utcnow()
+            
+            db.session.commit()
+            logger.info(f"Token refreshed successfully for {self.token.client_login}")
+        
+        return True
+    
+    def get_campaigns(self, include_archived=False):
+        """
+        Получить список кампаний пользователя
+        
+        Args:
+            include_archived: Включать ли архивные кампании
+            
+        Returns:
+            dict: Ответ API с данными о кампаниях
+        """
+        if not self._init_api_client():
+            return None
+            
+        try:
+            # Подготовка фильтра для кампаний
+            selection_criteria = {}
+            if not include_archived:
+                selection_criteria = {
+                    'States': ['ON', 'OFF', 'SUSPENDED', 'ENDED']  # Исключаем ARCHIVED
+                }
+            
+            # Указываем поля, которые нужно получить
+            field_names = [
+                'Id', 'Name', 'Status', 'State', 'Type', 
+                'DailyBudget', 'Statistics'
+            ]
+            
+            # Получаем кампании через tapi_yandex_direct
+            campaigns = self.api_client.campaigns().get(
+                SelectionCriteria=selection_criteria,
+                FieldNames=field_names
+            )
+            
+            return {
+                'Campaigns': campaigns['Campaigns'] if 'Campaigns' in campaigns else []
+            }
+            
+        except YandexDirectApiError as e:
+            logger.error(f"Yandex Direct API error: {e}")
+            return None
+        except Exception as e:
+            logger.exception(f"Error getting campaigns: {e}")
+            return None
+    
+    def get_campaign_details(self, campaign_ids=None):
+        """
+        Получить подробную информацию о кампаниях со статистикой
+        
+        Args:
+            campaign_ids: Список ID кампаний (если None, получаем все кампании)
+            
+        Returns:
+            list: Список деталей о кампаниях со статистикой
+        """
+        # Получаем кампании сначала
+        campaigns_response = self.get_campaigns(include_archived=True)
+        if not campaigns_response:
+            return []
+            
+        campaigns = campaigns_response.get('Campaigns', [])
+        
+        # Фильтруем по ID, если указаны
+        if campaign_ids:
+            campaigns = [c for c in campaigns if str(c.get('Id')) in [str(cid) for cid in campaign_ids]]
+            
+        # Получаем статистику за сегодня, если доступна
+        today = datetime.now().strftime('%Y-%m-%d')
+        stats_df = self._get_stats_report(
+            report_type='CAMPAIGN_PERFORMANCE_REPORT',
+            date_range_type='TODAY',
+            campaign_ids=[c.get('Id') for c in campaigns] if campaigns else None
+        )
+        
+        # Создаем подробные объекты кампаний
+        result = []
+        for campaign in campaigns:
+            campaign_id = str(campaign.get('Id'))
+            
+            # Находим статистику по кампании за сегодня
+            campaign_stats = {}
+            if not stats_df.empty and 'CampaignId' in stats_df.columns:
+                campaign_row = stats_df[stats_df['CampaignId'] == campaign_id]
+                if not campaign_row.empty:
+                    for col in stats_df.columns:
+                        campaign_stats[col] = campaign_row.iloc[0][col]
+            
+            # Формируем детальный объект кампании
+            campaign_detail = {
+                'Id': campaign_id,
+                'Name': campaign.get('Name', ''),
+                'Status': campaign.get('Status', {}).get('value', '') if isinstance(campaign.get('Status'), dict) else campaign.get('Status', ''),
+                'State': campaign.get('State', {}).get('value', '') if isinstance(campaign.get('State'), dict) else campaign.get('State', ''),
+                'Type': campaign.get('Type', {}).get('value', '') if isinstance(campaign.get('Type'), dict) else campaign.get('Type', ''),
+                'DailyBudget': campaign.get('DailyBudget', {}).get('Amount', 0) if campaign.get('DailyBudget') else 0,
+                'Impressions': campaign_stats.get('Impressions', 0),
+                'Clicks': campaign_stats.get('Clicks', 0),
+                'Cost': campaign_stats.get('Cost', 0),
+                'LastUpdated': datetime.now().isoformat()
+            }
+            
+            result.append(campaign_detail)
+            
+        return result
+    
+    def _get_stats_report(self, report_type, date_range_type='LAST_7_DAYS', date_from=None, date_to=None, campaign_ids=None, field_names=None):
+        """
+        Получает отчет по статистике через tapi_yandex_direct
+        
+        Args:
+            report_type: Тип отчета (CAMPAIGN_PERFORMANCE_REPORT и т.д.)
+            date_range_type: Тип диапазона дат (TODAY, YESTERDAY, LAST_7_DAYS и т.д.)
+            date_from: Дата начала в формате YYYY-MM-DD (если указан CUSTOM_DATE)
+            date_to: Дата окончания в формате YYYY-MM-DD (если указан CUSTOM_DATE)
+            campaign_ids: Список ID кампаний для фильтрации
+            field_names: Список полей для отчета
+            
+        Returns:
+            pandas.DataFrame: DataFrame с данными отчета
+        """
+        if not self._init_api_client():
+            return pd.DataFrame()
+        
+        if not field_names:
+            field_names = [
+                'CampaignId', 'CampaignName', 'Impressions', 'Clicks', 'Ctr', 
+                'Cost', 'AvgCpc', 'Conversions', 'ConversionRate', 'CostPerConversion'
+            ]
+            
+        # Подготовка параметров для запроса отчета
+        body = {
+            'SelectionCriteria': {},
+            'FieldNames': field_names,
+            'ReportName': f'{report_type} {date_range_type} {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
+            'ReportType': report_type,
+            'DateRangeType': date_range_type,
+            'Format': 'TSV',
+            'IncludeVAT': 'YES',
+            'IncludeDiscount': 'YES'
+        }
+        
+        # Если указан CUSTOM_DATE, добавляем даты
+        if date_range_type == 'CUSTOM_DATE':
+            if date_from and date_to:
+                body['DateFrom'] = date_from
+                body['DateTo'] = date_to
+            else:
+                logger.error("For CUSTOM_DATE range both date_from and date_to must be specified")
+                return pd.DataFrame()
+                
+        # Добавляем фильтр по кампаниям, если указан
+        if campaign_ids:
+            body['SelectionCriteria']['CampaignIds'] = campaign_ids
+        
+        try:
+            # Получаем отчет через tapi_yandex_direct
+            report_result = self.api_client.reports().get(body)
+            
+            # Проверяем результат
+            if not report_result or not report_result.get('data'):
+                logger.warning("Empty report received from Yandex Direct API")
+                return pd.DataFrame()
+                
+            # Преобразуем результат в DataFrame
+            df = pd.DataFrame(report_result.get('data', []))
+            
+            # Форматируем данные если DataFrame не пустой
+            if not df.empty:
+                # Преобразуем числовые поля
+                for col in ['Impressions', 'Clicks']:
+                    if col in df.columns:
+                        df[col] = pd.to_numeric(df[col], errors='coerce')
+                
+                # Cost в API Яндекс Директа возвращается в миллионах, делим на 1,000,000
+                if 'Cost' in df.columns:
+                    df['Cost'] = pd.to_numeric(df['Cost'], errors='coerce') / 1000000
+                
+                # CTR возвращается как десятичная дробь, умножаем на 100 для процентов
+                if 'Ctr' in df.columns:
+                    df['Ctr'] = pd.to_numeric(df['Ctr'], errors='coerce') * 100
+                    
+            return df
+            
+        except YandexDirectApiError as e:
+            logger.error(f"Yandex Direct API error: {e}")
+            return pd.DataFrame()
+        except Exception as e:
+            logger.exception(f"Error getting stats report: {e}")
+            return pd.DataFrame()
+    
+    def get_campaign_stats(self, campaign_ids=None, date_from=None, date_to=None):
+        """
+        Получить статистику по кампаниям
+        
+        Args:
+            campaign_ids: Список ID кампаний (опционально)
+            date_from: Дата начала (YYYY-MM-DD)
+            date_to: Дата окончания (YYYY-MM-DD)
+            
+        Returns:
+            dict: Статистика по кампаниям или None при ошибке
+        """
+        # Если даты указаны, используем CUSTOM_DATE
+        if date_from and date_to:
+            df = self._get_stats_report(
+                report_type='CAMPAIGN_PERFORMANCE_REPORT',
+                date_range_type='CUSTOM_DATE',
+                date_from=date_from,
+                date_to=date_to,
+                campaign_ids=campaign_ids
+            )
+        else:
+            # Иначе используем последние 7 дней по умолчанию
+            df = self._get_stats_report(
+                report_type='CAMPAIGN_PERFORMANCE_REPORT',
+                date_range_type='LAST_7_DAYS',
+                campaign_ids=campaign_ids
+            )
+        
+        if df.empty:
+            return None
+            
+        # Преобразуем DataFrame в структуру, совместимую с предыдущей версией API
+        try:
+            rows = []
+            for _, row in df.iterrows():
+                row_dict = {}
+                for col in df.columns:
+                    row_dict[col] = row[col]
+                rows.append(row_dict)
+                
+            return {
+                'Rows': rows,
+                'data': rows  # для совместимости со старым кодом
+            }
+        except Exception as e:
+            logger.exception(f"Error processing campaign stats: {e}")
+            return None
+    
+    def get_campaign_stats_dataframe(self, campaign_ids=None, date_from=None, date_to=None):
+        """
+        Получить статистику по кампаниям в виде pandas DataFrame
+        
+        Returns:
+            pandas.DataFrame: Статистика по кампаниям
+        """
+        # Если даты указаны, используем CUSTOM_DATE
+        if date_from and date_to:
+            return self._get_stats_report(
+                report_type='CAMPAIGN_PERFORMANCE_REPORT',
+                date_range_type='CUSTOM_DATE',
+                date_from=date_from,
+                date_to=date_to,
+                campaign_ids=campaign_ids
+            )
+        else:
+            # Иначе используем последние 7 дней по умолчанию
+            return self._get_stats_report(
+                report_type='CAMPAIGN_PERFORMANCE_REPORT',
+                date_range_type='LAST_7_DAYS',
+                campaign_ids=campaign_ids
+            )
     
     def _init_api_client(self):
         """Инициализация API клиента tapi_yandex_direct"""

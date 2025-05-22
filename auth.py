@@ -1,4 +1,3 @@
-import os
 import logging
 import requests
 from functools import wraps
@@ -9,7 +8,7 @@ from urllib.parse import urlencode
 
 from app import app
 from models import User
-from yandex_direct import YandexDirectAPI, store_token_for_user
+from yandex_direct import connection_manager
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -26,27 +25,13 @@ def admin_required(f):
     return decorated_function
 
 def get_yandex_auth_url():
-    """Generate the Yandex OAuth URL for user authentication"""
-    client_id = os.environ.get('YANDEX_CLIENT_ID')
-    redirect_uri = os.environ.get('YANDEX_REDIRECT_URI', 'http://localhost:5000/auth/yandex/callback')
-    
-    if not client_id:
-        logger.error("YANDEX_CLIENT_ID environment variable is not set")
-        return None
-    
-    params = {
-        'client_id': client_id,
-        'redirect_uri': redirect_uri,
-        'response_type': 'code',
-        'force_confirm': 'yes',
-        'scope': 'direct'
-    }
-    
-    return f"https://oauth.yandex.ru/authorize?{urlencode(params)}"
+    """Generate the Yandex OAuth URL for user authentication using the connection manager"""
+    # Используем глобальный менеджер подключений вместо переменных окружения
+    return connection_manager.get_auth_url()
 
 def process_yandex_callback(code):
     """
-    Process the OAuth callback from Yandex and get tokens
+    Process the OAuth callback from Yandex and get tokens using the connection manager
     
     Args:
         code: The authorization code from the callback
@@ -54,34 +39,22 @@ def process_yandex_callback(code):
     Returns:
         bool: Success status
     """
-    client_id = os.environ.get('YANDEX_CLIENT_ID')
-    client_secret = os.environ.get('YANDEX_CLIENT_SECRET')
-    redirect_uri = os.environ.get('YANDEX_REDIRECT_URI', 'http://localhost:5000/auth/yandex/callback')
-    
-    if not client_id or not client_secret:
-        logger.error("YANDEX_CLIENT_ID or YANDEX_CLIENT_SECRET environment variables are not set")
-        return False
-    
-    data = {
-        'grant_type': 'authorization_code',
-        'code': code,
-        'client_id': client_id,
-        'client_secret': client_secret,
-        'redirect_uri': redirect_uri
-    }
-    
     try:
-        response = requests.post('https://oauth.yandex.ru/token', data=data)
+        # Получаем токен через менеджер подключений
+        token_data = connection_manager.get_token(code)
         
-        if response.status_code != 200:
-            logger.error(f"Error getting Yandex token: {response.text}")
+        if not token_data:
+            logger.error("Failed to get token from Yandex API")
             return False
         
-        token_data = response.json()
+        # Сохраняем токен для текущего пользователя
+        token = connection_manager.store_token_for_user(current_user.id, token_data)
         
-        # Store the token for the current user
-        store_token_for_user(current_user.id, token_data)
-        
+        if not token:
+            logger.error("Failed to store token in database")
+            return False
+            
+        logger.info(f"Successfully connected Yandex Direct account: {token.client_login}")
         return True
     except Exception as e:
         logger.exception(f"Exception processing Yandex callback: {e}")
