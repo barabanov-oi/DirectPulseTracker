@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 
-{% block title %}Admin Dashboard - DirectPulse{% endblock %}
+{% block title %}Панель администратора - DirectPulse{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-8">
-        <h1><i class="fas fa-user-shield"></i> Admin Dashboard</h1>
-        <p class="text-muted">System overview and management</p>
+        <h1><i class="fas fa-user-shield"></i> Панель администратора</h1>
+        <p class="text-muted">Обзор и управление системой</p>
     </div>
 </div>
 
@@ -19,10 +19,10 @@
                     <i class="fas fa-users"></i>
                 </div>
                 <h3 class="mb-3">{{ user_count }}</h3>
-                <h5 class="text-muted">Users</h5>
-                <p class="card-text">Total registered users in the system</p>
+                <h5 class="text-muted">Пользователи</h5>
+                <p class="card-text">Всего зарегистрированных пользователей в системе</p>
                 <a href="{{ url_for('admin.users_list') }}" class="btn btn-primary">
-                    <i class="fas fa-users"></i> Manage Users
+                    <i class="fas fa-users"></i> Управление пользователями
                 </a>
             </div>
         </div>
@@ -36,10 +36,10 @@
                     <i class="fas fa-key"></i>
                 </div>
                 <h3 class="mb-3">{{ token_count }}</h3>
-                <h5 class="text-muted">Yandex Tokens</h5>
-                <p class="card-text">Active Yandex Direct API tokens</p>
+                <h5 class="text-muted">Токены Яндекса</h5>
+                <p class="card-text">Активные токены API Яндекс Директа</p>
                 <a href="{{ url_for('admin.tokens_list') }}" class="btn btn-info">
-                    <i class="fas fa-key"></i> Manage Tokens
+                    <i class="fas fa-key"></i> Управление токенами
                 </a>
             </div>
         </div>
@@ -53,10 +53,10 @@
                     <i class="fas fa-file-code"></i>
                 </div>
                 <h3 class="mb-3">{{ template_count }}</h3>
-                <h5 class="text-muted">Report Templates</h5>
-                <p class="card-text">User-created report templates</p>
+                <h5 class="text-muted">Шаблоны отчетов</h5>
+                <p class="card-text">Шаблоны отчетов, созданные пользователями</p>
                 <a href="{{ url_for('admin.templates_list') }}" class="btn btn-success">
-                    <i class="fas fa-file-code"></i> Manage Templates
+                    <i class="fas fa-file-code"></i> Управление шаблонами
                 </a>
             </div>
         </div>
@@ -66,32 +66,32 @@
 <!-- System Information Card -->
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-primary text-white">
-        <h5 class="mb-0"><i class="fas fa-server"></i> System Information</h5>
+        <h5 class="mb-0"><i class="fas fa-server"></i> Системная информация</h5>
     </div>
     <div class="card-body">
         <div class="row">
             <div class="col-md-6">
-                <h5>DirectPulse System</h5>
+                <h5>Система DirectPulse</h5>
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item bg-transparent">
-                        <i class="fas fa-check-circle text-success"></i> Telegram Bot Status: <span class="badge bg-success">Running</span>
+                        <i class="fas fa-check-circle text-success"></i> Статус бота Telegram: <span class="badge bg-success">Работает</span>
                     </li>
                     <li class="list-group-item bg-transparent">
-                        <i class="fas fa-check-circle text-success"></i> Scheduler Status: <span class="badge bg-success">Running</span>
+                        <i class="fas fa-check-circle text-success"></i> Статус планировщика: <span class="badge bg-success">Работает</span>
                     </li>
                     <li class="list-group-item bg-transparent">
-                        <i class="fas fa-database"></i> Database: <span class="badge bg-info">Connected</span>
+                        <i class="fas fa-database"></i> База данных: <span class="badge bg-info">Подключена</span>
                     </li>
                 </ul>
             </div>
             <div class="col-md-6">
-                <h5>API Status</h5>
+                <h5>Статус API</h5>
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item bg-transparent">
-                        <i class="fas fa-check-circle text-success"></i> Yandex Direct API: <span class="badge bg-success">Active</span>
+                        <i class="fas fa-check-circle text-success"></i> API Яндекс Директа: <span class="badge bg-success">Активно</span>
                     </li>
                     <li class="list-group-item bg-transparent">
-                        <i class="fas fa-check-circle text-success"></i> Telegram API: <span class="badge bg-success">Connected</span>
+                        <i class="fas fa-check-circle text-success"></i> API Telegram: <span class="badge bg-success">Подключено</span>
                     </li>
                 </ul>
             </div>
@@ -102,32 +102,32 @@
 <!-- Quick Actions -->
 <div class="card shadow-sm">
     <div class="card-header bg-primary text-white">
-        <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+        <h5 class="mb-0"><i class="fas fa-bolt"></i> Быстрые действия</h5>
     </div>
     <div class="card-body">
         <div class="row">
             <div class="col-md-3 mb-3">
                 <a href="{{ url_for('admin.users_list') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
                     <i class="fas fa-user-plus fa-2x mb-3"></i>
-                    <span>Add New User</span>
+                    <span>Добавить пользователя</span>
                 </a>
             </div>
             <div class="col-md-3 mb-3">
                 <a href="#" class="btn btn-outline-info w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
                     <i class="fas fa-sync-alt fa-2x mb-3"></i>
-                    <span>Refresh Scheduler</span>
+                    <span>Обновить планировщик</span>
                 </a>
             </div>
             <div class="col-md-3 mb-3">
                 <a href="#" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
                     <i class="fas fa-tasks fa-2x mb-3"></i>
-                    <span>View System Logs</span>
+                    <span>Просмотр системных логов</span>
                 </a>
             </div>
             <div class="col-md-3 mb-3">
                 <a href="#" class="btn btn-outline-warning w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
                     <i class="fas fa-cogs fa-2x mb-3"></i>
-                    <span>System Settings</span>
+                    <span>Настройки системы</span>
                 </a>
             </div>
         </div>
