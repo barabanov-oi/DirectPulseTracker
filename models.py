@@ -37,8 +37,8 @@ class YandexToken(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    access_token = db.Column(db.String(256), nullable=False)
-    refresh_token = db.Column(db.String(256), nullable=False)
+    access_token = db.Column(db.String(1024), nullable=False)
+    refresh_token = db.Column(db.String(1024), nullable=False)
     token_type = db.Column(db.String(64), default='Bearer')
     expires_at = db.Column(db.DateTime, nullable=False)
     client_login = db.Column(db.String(120), nullable=True)
