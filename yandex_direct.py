@@ -81,7 +81,10 @@ class YandexDirectConnectionManager:
         """
         # Ищем токен пользователя
         if default_only:
-            token = YandexToken.query.filter_by(user_id=user_id, is_default=True).first()
+            token = YandexToken.query.filter_by(user_id=user_id, is_default=True, is_active=True).first()
+            if not token:
+                # Если токен по умолчанию не найден или не активен, попробуем найти любой активный
+                token = YandexToken.query.filter_by(user_id=user_id, is_active=True).first()
         else:
             token = YandexToken.query.filter_by(user_id=user_id, is_active=True).first()
         

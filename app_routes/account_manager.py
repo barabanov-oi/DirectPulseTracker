@@ -82,6 +82,11 @@ def set_default_account(token_id):
     token = YandexToken.query.get_or_404(token_id)
     user_id = token.user_id
     
+    # Проверяем, что пользователь имеет доступ к этому аккаунту
+    if token.user_id != current_user.id and not current_user.is_admin:
+        flash('У вас нет доступа к этому аккаунту', 'danger')
+        return redirect(url_for('account_manager.index'))
+    
     # Сбрасываем флаг у всех токенов пользователя
     user_tokens = YandexToken.query.filter_by(user_id=user_id).all()
     for t in user_tokens:
@@ -99,6 +104,12 @@ def set_default_account(token_id):
 def rename_account(token_id):
     """Переименовать аккаунт"""
     token = YandexToken.query.get_or_404(token_id)
+    
+    # Проверяем, что пользователь имеет доступ к этому аккаунту
+    if token.user_id != current_user.id and not current_user.is_admin:
+        flash('У вас нет доступа к этому аккаунту', 'danger')
+        return redirect(url_for('account_manager.index'))
+        
     new_name = request.form.get('account_name', '').strip()
     
     if new_name:
@@ -115,6 +126,12 @@ def rename_account(token_id):
 def toggle_active(token_id):
     """Включить/выключить аккаунт"""
     token = YandexToken.query.get_or_404(token_id)
+    
+    # Проверяем, что пользователь имеет доступ к этому аккаунту
+    if token.user_id != current_user.id and not current_user.is_admin:
+        flash('У вас нет доступа к этому аккаунту', 'danger')
+        return redirect(url_for('account_manager.index'))
+        
     token.is_active = not token.is_active
     
     # Если деактивируем аккаунт по умолчанию, нужно выбрать другой
@@ -136,6 +153,12 @@ def toggle_active(token_id):
 def delete_account(token_id):
     """Удалить аккаунт"""
     token = YandexToken.query.get_or_404(token_id)
+    
+    # Проверяем, что пользователь имеет доступ к этому аккаунту
+    if token.user_id != current_user.id and not current_user.is_admin:
+        flash('У вас нет доступа к этому аккаунту', 'danger')
+        return redirect(url_for('account_manager.index'))
+    
     account_name = token.account_name or token.client_login or f"Аккаунт #{token.id}"
     user_id = token.user_id
     
