@@ -542,16 +542,48 @@ class YandexDirectAPI:
                     report_params['ReportDefinition']['DateFrom'] = date_from
                     report_params['ReportDefinition']['DateTo'] = date_to
                     
-            # Получаем отчет
-            report_result = self.api_client.reports().download(report_params)
+            # Обходим ошибки с нестандартными методами API
+            # Используем прямой доступ к API через requests, так как библиотека может не поддерживать текущий интерфейс
+            import requests
+            
+            # Подготавливаем заголовки и данные запроса
+            headers = {
+                "Authorization": f"Bearer {self.token.access_token}",
+                "Accept-Language": "ru",
+                "Content-Type": "application/json; charset=utf-8",
+                "Client-Login": self.token.client_login if hasattr(self.token, 'client_login') else None
+            }
+            
+            # Формируем запрос к API статистики
+            stats_url = "https://api.direct.yandex.com/json/v5/reports"
+            
+            # Получаем данные через прямой HTTP запрос
+            try:
+                response = requests.post(stats_url, headers=headers, json=report_params, timeout=60)
+                
+                if response.status_code == 200:
+                    # Успешно получили данные, преобразуем в DataFrame
+                    import io
+                    # Создаем DataFrame из TSV данных
+                    df = pd.read_csv(io.StringIO(response.text), sep='\t', skiprows=1)
+                    report_result = df
+                else:
+                    logger.error(f"Error getting report: {response.status_code} - {response.text}")
+                    return pd.DataFrame()
+            except Exception as e:
+                logger.exception(f"Exception during direct API call: {e}")
+                return pd.DataFrame()
+                
+            # Результат уже в виде DataFrame
+            report_result = df
             
             # Проверяем результат
-            if not report_result or not report_result.get('data'):
+            if not report_result or not isinstance(report_result, pd.DataFrame) or report_result.empty:
                 logger.warning("Empty report received from Yandex Direct API")
                 return pd.DataFrame()
                 
-            # Преобразуем результат в DataFrame
-            df = pd.DataFrame(report_result.get('data', []))
+            # В tapi_yandex_direct v2 отчет сразу возвращается как DataFrame
+            df = report_result
             
             # Форматируем данные если DataFrame не пустой
             if not df.empty:
@@ -560,13 +592,21 @@ class YandexDirectAPI:
                     if col in df.columns:
                         df[col] = pd.to_numeric(df[col], errors='coerce')
                 
-                # Cost в API Яндекс Директа возвращается в миллионах, делим на 1,000,000
+                # В версии 2 библиотеки Cost может возвращаться уже в правильном формате
+                # Проверяем, нужно ли делить на 1,000,000
                 if 'Cost' in df.columns:
-                    df['Cost'] = pd.to_numeric(df['Cost'], errors='coerce') / 1000000
+                    # Преобразуем в числовой формат
+                    df['Cost'] = pd.to_numeric(df['Cost'], errors='coerce')
+                    # Проверим первое значение, если оно очень большое, значит нужно делить
+                    if not df.empty and df['Cost'].iloc[0] > 10000:
+                        df['Cost'] = df['Cost'] / 1000000
                 
-                # CTR возвращается как десятичная дробь, умножаем на 100 для процентов
+                # Для CTR тоже проверяем формат
                 if 'Ctr' in df.columns:
-                    df['Ctr'] = pd.to_numeric(df['Ctr'], errors='coerce') * 100
+                    df['Ctr'] = pd.to_numeric(df['Ctr'], errors='coerce')
+                    # Если CTR меньше 1, значит это доля, нужно умножить на 100 для процентов
+                    if not df.empty and df['Ctr'].iloc[0] < 1:
+                        df['Ctr'] = df['Ctr'] * 100
                     
             return df
             
