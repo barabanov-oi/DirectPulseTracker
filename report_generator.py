@@ -36,9 +36,12 @@ def generate_report(yandex_client, template):
             if df.empty:
                 logger.warning("Received empty dataframe from Yandex Direct API")
                 return None, "Нет данных за выбранный период. Проверьте что: \n1. В аккаунте есть активные кампании\n2. Был выбран корректный период\n3. Токен доступа активен"
-        
-        # Process and aggregate data
-        report_data = process_report_data(df, metrics)
+            
+            # Process and aggregate data
+            report_data = process_report_data(df, metrics)
+        except Exception as e:
+            logger.error(f"Error getting campaign stats: {e}")
+            return None, f"Ошибка при получении данных: {str(e)}"
         
         # Generate summary text
         summary = generate_summary(df)
