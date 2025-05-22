@@ -16,8 +16,12 @@ account_manager = Blueprint('account_manager', __name__, url_prefix='/account-ma
 @login_required
 def index():
     """Главная страница менеджера аккаунтов"""
-    # Получаем всех пользователей и их токены
-    users = User.query.all()
+    # Если пользователь не админ, показываем только его аккаунты
+    if not current_user.is_admin:
+        users = [current_user]
+    else:
+        # Админы видят все аккаунты
+        users = User.query.all()
     
     # Собираем информацию об аккаунтах
     account_data = []
@@ -47,6 +51,11 @@ def account_details(token_id):
     """Страница с детальной информацией об аккаунте"""
     token = YandexToken.query.get_or_404(token_id)
     user = User.query.get(token.user_id)
+    
+    # Проверяем, что пользователь имеет доступ к этому аккаунту
+    if token.user_id != current_user.id and not current_user.is_admin:
+        flash('У вас нет доступа к этому аккаунту', 'danger')
+        return redirect(url_for('account_manager.index'))
     
     # Получаем информацию о кампаниях
     campaigns = []
