@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Результаты оптимизации</h1>
+        <div>
+            <a href="{{ url_for('optimization.analyze_account', token_id=token.id) }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-sync-alt"></i> Новый анализ
+            </a>
+            <a href="{{ url_for('optimization.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> К списку
+            </a>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">Информация об анализе</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Аккаунт:</strong> {{ account_name }}</p>
+                    <p><strong>Дата анализа:</strong> {{ optimization.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Статус:</strong> 
+                        <span class="badge 
+                            {% if optimization.status == 'completed' %}bg-success
+                            {% elif optimization.status == 'pending' %}bg-warning
+                            {% else %}bg-danger{% endif %}">
+                            {{ optimization.status }}
+                        </span>
+                    </p>
+                    <p><strong>Количество кампаний:</strong> {{ recommendations|length }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if recommendations %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="card-title mb-0">Рекомендации по оптимизации</h5>
+        </div>
+        <div class="card-body">
+            <div class="accordion" id="accordionRecommendations">
+                {% for rec in recommendations %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ loop.index }}">
+                        <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="{{ 'true' if loop.first else 'false' }}" aria-controls="collapse{{ loop.index }}">
+                            <div class="w-100 d-flex justify-content-between">
+                                <span>{{ rec.campaign_name }}</span>
+                                <span class="badge bg-info rounded-pill">{{ rec.suggestions|length }} рекомендаций</span>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse{{ loop.index }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#accordionRecommendations">
+                        <div class="accordion-body">
+                            <div class="list-group">
+                                {% for suggestion in rec.suggestions %}
+                                <div class="list-group-item">
+                                    <div class="d-flex">
+                                        <div class="me-3">
+                                            <i class="fas fa-lightbulb text-warning fs-4"></i>
+                                        </div>
+                                        <div>
+                                            <p class="mb-0">{{ suggestion }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="card-title mb-0">Как внедрить рекомендации</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-check-square text-success me-2"></i>Шаг 1: Оценка</h5>
+                            <p class="card-text">Изучите рекомендации и определите, какие из них наиболее актуальны для ваших целей.</p>
+                            <p class="card-text small text-muted">Приоритизируйте изменения на основе их потенциального влияния на ваши KPI.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-tools text-primary me-2"></i>Шаг 2: Внедрение</h5>
+                            <p class="card-text">Внесите изменения в настройки кампаний в интерфейсе Яндекс Директа.</p>
+                            <p class="card-text small text-muted">Рекомендуется вносить изменения постепенно, чтобы отслеживать их эффективность.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-chart-line text-danger me-2"></i>Шаг 3: Мониторинг</h5>
+                            <p class="card-text">Отслеживайте результаты внесенных изменений через панель статистики.</p>
+                            <p class="card-text small text-muted">Регулярно проводите новый анализ для получения актуальных рекомендаций.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i> Нет доступных рекомендаций для данного анализа. Возможно, анализ еще выполняется или произошла ошибка.
+        <a href="{{ url_for('optimization.analyze_account', token_id=token.id) }}" class="alert-link">Попробуйте создать новый анализ</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

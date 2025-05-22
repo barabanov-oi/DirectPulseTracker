@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from app import app
 # Импортируем из переименованной папки app_routes
-from app_routes import main, auth, reports, admin, diagnostics, account_manager
+from app_routes import main, auth, reports, admin, diagnostics, account_manager, optimization
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -20,6 +20,7 @@ app.register_blueprint(reports.reports_bp)
 app.register_blueprint(admin.admin_bp)
 app.register_blueprint(diagnostics.diagnostics_bp, url_prefix='/diagnostics')
 app.register_blueprint(account_manager.account_manager)
+app.register_blueprint(optimization.optimization_bp)
 
 logger.info("Application initialized and ready")
 

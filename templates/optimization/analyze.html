@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Анализ аккаунта: {{ account_name }}</h1>
+        <a href="{{ url_for('optimization.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Назад
+        </a>
+    </div>
+    
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">Выберите кампании для анализа</h5>
+        </div>
+        <div class="card-body">
+            {% if campaigns %}
+            <form action="{{ url_for('optimization.generate_optimization', token_id=token.id) }}" method="post">
+                <p class="card-text mb-4">Выберите рекламные кампании, для которых хотите получить рекомендации по оптимизации:</p>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="select-all">
+                    <label class="form-check-label fw-bold" for="select-all">
+                        Выбрать все кампании
+                    </label>
+                </div>
+                
+                <div class="row">
+                    {% for campaign in campaigns %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 campaign-card {% if campaign.state != 'ON' %}border-warning{% endif %}">
+                            <div class="card-body">
+                                <div class="form-check">
+                                    <input class="form-check-input campaign-checkbox" type="checkbox" name="campaign_ids" value="{{ campaign.id }}" id="campaign-{{ campaign.id }}" {% if campaign.state == 'ON' %}checked{% endif %}>
+                                    <label class="form-check-label d-block" for="campaign-{{ campaign.id }}">
+                                        <h5 class="mb-1">{{ campaign.name }}</h5>
+                                        <div class="d-flex justify-content-between">
+                                            <span class="badge {% if campaign.state == 'ON' %}bg-success{% else %}bg-warning{% endif %}">
+                                                {{ campaign.state }}
+                                            </span>
+                                            <span class="text-muted">{{ campaign.type }}</span>
+                                        </div>
+                                        {% if campaign.daily_budget %}
+                                        <div class="mt-2">
+                                            <small class="text-muted">Дневной бюджет: {{ campaign.daily_budget }} ₽</small>
+                                        </div>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+                    <button type="submit" class="btn btn-lg btn-primary">
+                        <i class="fas fa-magic me-2"></i> Сгенерировать рекомендации
+                    </button>
+                </div>
+            </form>
+            {% else %}
+            <div class="alert alert-warning" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i> В данном аккаунте не найдены рекламные кампании.
+                <a href="{{ url_for('optimization.index') }}" class="alert-link">Вернуться к выбору аккаунта</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="card-title mb-0">Что анализирует AI-оптимизация</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-chart-line text-primary me-2"></i>Показатели эффективности</h5>
+                            <ul class="small">
+                                <li>CTR (показатель кликабельности)</li>
+                                <li>Средняя стоимость клика (CPC)</li>
+                                <li>Конверсии и стоимость конверсии</li>
+                                <li>Показы и клики</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-cog text-warning me-2"></i>Настройки кампаний</h5>
+                            <ul class="small">
+                                <li>Стратегии ставок</li>
+                                <li>Распределение бюджета</li>
+                                <li>Настройки таргетинга</li>
+                                <li>Расписание показов</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-bullseye text-danger me-2"></i>Ключевые слова</h5>
+                            <ul class="small">
+                                <li>Релевантность ключевых слов</li>
+                                <li>Эффективность объявлений</li>
+                                <li>Минус-слова</li>
+                                <li>Соответствие запросам</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Обработчик для выбора всех кампаний
+        const selectAll = document.getElementById('select-all');
+        const campaignCheckboxes = document.querySelectorAll('.campaign-checkbox');
+        
+        selectAll.addEventListener('change', function() {
+            campaignCheckboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+        });
+        
+        // Обновление состояния "выбрать все" при изменении отдельных чекбоксов
+        campaignCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const allChecked = Array.from(campaignCheckboxes).every(c => c.checked);
+                const anyChecked = Array.from(campaignCheckboxes).some(c => c.checked);
+                
+                selectAll.checked = allChecked;
+                selectAll.indeterminate = anyChecked && !allChecked;
+            });
+        });
+        
+        // Проверка состояния при загрузке страницы
+        const allChecked = Array.from(campaignCheckboxes).every(c => c.checked);
+        const anyChecked = Array.from(campaignCheckboxes).some(c => c.checked);
+        
+        selectAll.checked = allChecked;
+        selectAll.indeterminate = anyChecked && !allChecked;
+    });
+</script>
+{% endblock %}
+{% endblock %}
