@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+
+{% block title %}Диагностика аккаунтов - DirectPulse{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="fas fa-stethoscope"></i> Диагностика</h1>
+        <p class="text-muted">Проверка подключений к аккаунтам Яндекс Директа</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a href="{{ url_for('auth.yandex_authorize') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Добавить аккаунт
+        </a>
+    </div>
+</div>
+
+<!-- Сводка по аккаунтам -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-user-check"></i> Статус аккаунтов Яндекс Директа</h5>
+    </div>
+    <div class="card-body">
+        {% if summary.accounts_count > 0 %}
+            <div class="row mb-4 text-center">
+                <div class="col-md-4">
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Всего аккаунтов</h5>
+                            <p class="card-text display-4">{{ summary.accounts_count }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Активных аккаунтов</h5>
+                            <p class="card-text display-4">{{ summary.active_accounts }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">С ошибками</h5>
+                            <p class="card-text display-4">{{ summary.accounts_count - summary.active_accounts }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover" id="accountsTable">
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Статус</th>
+                            <th>Кампаний</th>
+                            <th>Активные</th>
+                            <th>Последнее обновление</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for account in summary.accounts %}
+                        <tr>
+                            <td>
+                                {% if account.is_default %}
+                                <span class="badge bg-primary" title="Аккаунт по умолчанию"><i class="fas fa-star"></i></span>
+                                {% endif %}
+                                {{ account.name }}
+                            </td>
+                            <td>
+                                {% if account.status == "Активен" %}
+                                <span class="badge bg-success">{{ account.status }}</span>
+                                {% elif account.status == "Токен устарел" %}
+                                <span class="badge bg-warning">{{ account.status }}</span>
+                                {% else %}
+                                <span class="badge bg-danger">{{ account.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ account.campaigns_count }}</td>
+                            <td>{{ account.active_campaigns }}</td>
+                            <td>{{ account.last_updated }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('diagnostics.account_details', token_id=account.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-search"></i> Детали
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="testApiConnection({{ account.id }})">
+                                        <i class="fas fa-vial"></i> Тест API
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editAccountModal{{ account.id }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <form method="POST" action="{{ url_for('diagnostics.toggle_account_status', token_id=account.id) }}" class="d-inline" id="toggleForm{{ account.id }}">
+                                        <button type="submit" class="btn btn-sm {% if account.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+                                            {% if account.is_active %}
+                                            <i class="fas fa-power-off"></i>
+                                            {% else %}
+                                            <i class="fas fa-check"></i>
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                    {% if not account.is_default %}
+                                    <form method="POST" action="{{ url_for('diagnostics.set_default_account', token_id=account.id) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-warning">
+                                            <i class="fas fa-star"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Edit Account Modal -->
+                                <div class="modal fade" id="editAccountModal{{ account.id }}" tabindex="-1" aria-labelledby="editAccountModalLabel{{ account.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-primary text-white">
+                                                <h5 class="modal-title" id="editAccountModalLabel{{ account.id }}">
+                                                    <i class="fas fa-edit"></i> Редактирование аккаунта
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <form method="POST" action="{{ url_for('diagnostics.edit_account', token_id=account.id) }}">
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label for="account_name" class="form-label">Название аккаунта</label>
+                                                        <input type="text" class="form-control" id="account_name" name="account_name" value="{{ account.name }}" required>
+                                                        <div class="form-text">Это название будет использоваться для идентификации аккаунта в системе</div>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Текущий статус</label>
+                                                        <input type="text" class="form-control" value="{{ account.status }}" readonly>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Последнее обновление</label>
+                                                        <input type="text" class="form-control" value="{{ account.last_updated }}" readonly>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Последний статус</label>
+                                                        <textarea class="form-control" rows="2" readonly>{{ account.last_status }}</textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-circle"></i> У вас еще нет подключенных аккаунтов Яндекс Директ.
+            </div>
+            <p>Для работы с отчетами необходимо подключить аккаунт Яндекс Директ:</p>
+            <a href="{{ url_for('auth.yandex_authorize') }}" class="btn btn-primary">
+                <i class="fas fa-link"></i> Подключить аккаунт Яндекс Директ
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Руководство по диагностике -->
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Руководство по диагностике</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h5>Частые проблемы с подключением</h5>
+                <ul class="list-group mb-3">
+                    <li class="list-group-item bg-transparent">
+                        <h6><i class="fas fa-clock text-warning"></i> Истек срок токена</h6>
+                        <p class="mb-0 small">Переавторизуйтесь в Яндекс Директе или обновите токен вручную.</p>
+                    </li>
+                    <li class="list-group-item bg-transparent">
+                        <h6><i class="fas fa-ban text-danger"></i> Отсутствуют кампании</h6>
+                        <p class="mb-0 small">Проверьте, что в аккаунте есть активные рекламные кампании.</p>
+                    </li>
+                    <li class="list-group-item bg-transparent">
+                        <h6><i class="fas fa-user-lock text-danger"></i> Нет прав доступа</h6>
+                        <p class="mb-0 small">Убедитесь, что у токена есть необходимые права для работы со статистикой.</p>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h5>Как решить проблемы</h5>
+                <div class="accordion" id="accordionDiagnostics">
+                    <div class="accordion-item bg-transparent">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                Истек срок действия токена
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionDiagnostics">
+                            <div class="accordion-body">
+                                <p>Если срок действия токена истек:</p>
+                                <ol>
+                                    <li>Нажмите кнопку "Тест API" для проверки автоматического обновления</li>
+                                    <li>Если автоматическое обновление не помогло, добавьте новый аккаунт</li>
+                                    <li>Перенаправьте расписания и условия на новый аккаунт</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item bg-transparent">
+                        <h2 class="accordion-header" id="headingTwo">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                Нет активных кампаний
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionDiagnostics">
+                            <div class="accordion-body">
+                                <p>Если в аккаунте нет активных кампаний:</p>
+                                <ol>
+                                    <li>Убедитесь, что в аккаунте Яндекс Директ созданы рекламные кампании</li>
+                                    <li>Проверьте, что кампании не находятся в архиве</li>
+                                    <li>Для генерации отчетов должны быть кампании с показами и кликами</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        if ($('#accountsTable').length > 0) {
+            $('#accountsTable').DataTable({
+                responsive: true,
+                order: [[1, 'asc']],
+                language: {
+                    "processing": "Подождите...",
+                    "search": "Поиск:",
+                    "lengthMenu": "Показать _MENU_ записей",
+                    "info": "Записи с _START_ до _END_ из _TOTAL_ записей",
+                    "infoEmpty": "Записи с 0 до 0 из 0 записей",
+                    "infoFiltered": "(отфильтровано из _MAX_ записей)",
+                    "loadingRecords": "Загрузка записей...",
+                    "zeroRecords": "Записи отсутствуют",
+                    "emptyTable": "В таблице отсутствуют данные",
+                    "paginate": {
+                        "first": "Первая",
+                        "previous": "Предыдущая",
+                        "next": "Следующая",
+                        "last": "Последняя"
+                    }
+                }
+            });
+        }
+    });
+    
+    function testApiConnection(tokenId) {
+        const button = event.target.closest('button');
+        const originalHtml = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Проверка...';
+        button.disabled = true;
+        
+        // Делаем AJAX запрос для проверки соединения
+        fetch(`/diagnostics/api/test/${tokenId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Соединение работает!',
+                        text: data.message,
+                        confirmButtonText: 'OK'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Ошибка соединения',
+                        text: data.message,
+                        confirmButtonText: 'OK'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Ошибка',
+                    text: 'Не удалось выполнить проверку соединения',
+                    confirmButtonText: 'OK'
+                });
+            })
+            .finally(() => {
+                button.innerHTML = originalHtml;
+                button.disabled = false;
+            });
+    }
+</script>
+{% endblock %}

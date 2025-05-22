@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+
+{% block title %}Детали аккаунта - DirectPulse{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('diagnostics.index') }}">Диагностика</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ token.account_name or token.client_login or "Аккаунт #" ~ token.id }}</li>
+            </ol>
+        </nav>
+        <h1><i class="fas fa-id-card"></i> {{ token.account_name or token.client_login or "Аккаунт #" ~ token.id }}</h1>
+        <p class="text-muted">Детальная информация о подключении к Яндекс Директу</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <form method="POST" action="{{ url_for('diagnostics.sync_account_campaigns', token_id=token.id) }}">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-sync-alt"></i> Синхронизировать кампании
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Информация об аккаунте -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-user-check"></i> Информация об аккаунте</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Название аккаунта</label>
+                    <p>{{ token.account_name or "Не указано" }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Логин в Яндекс Директе</label>
+                    <p>{{ token.client_login or "Не указано" }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Статус аккаунта</label>
+                    <p>
+                        {% if token.get_status() == "Активен" %}
+                        <span class="badge bg-success">{{ token.get_status() }}</span>
+                        {% elif token.get_status() == "Токен устарел" %}
+                        <span class="badge bg-warning">{{ token.get_status() }}</span>
+                        {% else %}
+                        <span class="badge bg-danger">{{ token.get_status() }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Срок действия токена до</label>
+                    <p>{{ token.expires_at.strftime('%Y-%m-%d %H:%M') if token.expires_at else "Не указано" }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Последнее использование</label>
+                    <p>{{ token.last_used.strftime('%Y-%m-%d %H:%M') if token.last_used else "Не использовался" }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Последний статус операции</label>
+                    <p>{{ token.last_status or "Нет данных" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Сводка по кампаниям -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Сводка по кампаниям</h5>
+    </div>
+    <div class="card-body">
+        {% if campaign_data.campaigns|length > 0 %}
+            <div class="row mb-4 text-center">
+                <div class="col-md-3">
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Всего кампаний</h5>
+                            <p class="card-text display-4">{{ campaign_data.campaigns_total }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Активные</h5>
+                            <p class="card-text display-4">{{ campaign_data.active_campaigns }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Приостановлены</h5>
+                            <p class="card-text display-4">{{ campaign_data.paused_campaigns }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Отключены</h5>
+                            <p class="card-text display-4">{{ campaign_data.off_campaigns }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-light mb-3">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Показы</h5>
+                            <p class="card-text display-5">{{ '{:,}'.format(campaign_data.total_impressions) }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light mb-3">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Клики</h5>
+                            <p class="card-text display-5">{{ '{:,}'.format(campaign_data.total_clicks) }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light mb-3">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">CTR</h5>
+                            <p class="card-text display-5">{{ '%.2f'|format(campaign_data.ctr) }}%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Последнее обновление данных: {{ campaign_data.last_updated }}
+            </div>
+        {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-circle"></i> Нет данных о кампаниях для этого аккаунта.
+            </div>
+            <p>Возможные причины:</p>
+            <ul>
+                <li>В аккаунте Яндекс Директа нет активных кампаний</li>
+                <li>Проблемы с доступом к API Яндекс Директа</li>
+                <li>Кампании еще не были синхронизированы</li>
+            </ul>
+            <form method="POST" action="{{ url_for('diagnostics.sync_account_campaigns', token_id=token.id) }}">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sync-alt"></i> Синхронизировать кампании
+                </button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Список кампаний -->
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-list"></i> Список рекламных кампаний</h5>
+    </div>
+    <div class="card-body">
+        {% if campaign_data.campaigns|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="campaignsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Название</th>
+                            <th>Статус</th>
+                            <th>Тип</th>
+                            <th>Дневной бюджет</th>
+                            <th>Показы</th>
+                            <th>Клики</th>
+                            <th>CTR</th>
+                            <th>Стоимость</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for campaign in campaign_data.campaigns %}
+                        <tr>
+                            <td>{{ campaign.campaign_id }}</td>
+                            <td>{{ campaign.name }}</td>
+                            <td>
+                                {% if campaign.status == 'ON' %}
+                                <span class="badge bg-success">{{ campaign.status_display }}</span>
+                                {% elif campaign.status == 'SUSPENDED' %}
+                                <span class="badge bg-warning">{{ campaign.status_display }}</span>
+                                {% else %}
+                                <span class="badge bg-danger">{{ campaign.status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ campaign.type }}</td>
+                            <td>{{ '%.2f'|format(campaign.daily_budget) }} ₽</td>
+                            <td>{{ '{:,}'.format(campaign.impressions) }}</td>
+                            <td>{{ '{:,}'.format(campaign.clicks) }}</td>
+                            <td>{{ '%.2f'|format(campaign.ctr) }}%</td>
+                            <td>{{ '%.2f'|format(campaign.cost) }} ₽</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-ad fa-3x text-muted mb-3"></i>
+                <p>Нет доступных данных о кампаниях.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        if ($('#campaignsTable').length > 0) {
+            $('#campaignsTable').DataTable({
+                responsive: true,
+                order: [[2, 'asc'], [1, 'asc']],
+                pageLength: 25,
+                language: {
+                    "processing": "Подождите...",
+                    "search": "Поиск:",
+                    "lengthMenu": "Показать _MENU_ записей",
+                    "info": "Записи с _START_ до _END_ из _TOTAL_ записей",
+                    "infoEmpty": "Записи с 0 до 0 из 0 записей",
+                    "infoFiltered": "(отфильтровано из _MAX_ записей)",
+                    "loadingRecords": "Загрузка записей...",
+                    "zeroRecords": "Записи отсутствуют",
+                    "emptyTable": "В таблице отсутствуют данные",
+                    "paginate": {
+                        "first": "Первая",
+                        "previous": "Предыдущая",
+                        "next": "Следующая",
+                        "last": "Последняя"
+                    }
+                },
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'csv',
+                        text: '<i class="fas fa-file-csv"></i> Экспорт CSV',
+                        className: 'btn btn-outline-primary btn-sm',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    {
+                        extend: 'excel',
+                        text: '<i class="fas fa-file-excel"></i> Экспорт Excel',
+                        className: 'btn btn-outline-success btn-sm',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    {
+                        extend: 'colvis',
+                        text: '<i class="fas fa-columns"></i> Столбцы',
+                        className: 'btn btn-outline-secondary btn-sm'
+                    }
+                ]
+            });
+        }
+    });
+</script>
+{% endblock %}
