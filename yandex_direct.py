@@ -834,13 +834,45 @@ class YandexDirectAPI:
                 'DailyBudget', 'Statistics'
             ]
             
-            # Получаем кампании через tapi_yandex_direct
-            # Версия 2 библиотеки использует другой формат параметров
-            campaigns = self.api_client.campaigns().get()
+            # Используем прямой HTTP запрос вместо библиотеки tapi_yandex_direct
+            import requests
+            import json
             
-            return {
-                'Campaigns': campaigns['Campaigns'] if 'Campaigns' in campaigns else []
+            # Подготавливаем заголовки запроса
+            headers = {
+                "Authorization": f"Bearer {self.token.access_token}",
+                "Accept-Language": "ru",
+                "Content-Type": "application/json; charset=utf-8"
             }
+            
+            # Добавляем client_login если доступен
+            if hasattr(self.token, 'client_login') and self.token.client_login:
+                headers["Client-Login"] = self.token.client_login
+                
+            # Формируем данные запроса
+            data = {
+                "method": "get",
+                "params": {
+                    "SelectionCriteria": {} if include_archived else {"States": ["ON", "OFF", "SUSPENDED"]},
+                    "FieldNames": ["Id", "Name", "Status", "State", "Type", "DailyBudget", "Statistics"]
+                }
+            }
+            
+            # URL API
+            url = "https://api.direct.yandex.com/json/v5/campaigns"
+            
+            # Выполняем запрос
+            response = requests.post(url, headers=headers, json=data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                return {
+                    'Campaigns': result.get('result', {}).get('Campaigns', [])
+                }
+            else:
+                logger.error(f"API error: {response.status_code} - {response.text}")
+                return {'Campaigns': []}
+            
             
         except YandexDirectApiError as e:
             logger.error(f"Yandex Direct API error: {e}")

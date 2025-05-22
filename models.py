@@ -1,6 +1,6 @@
-from datetime import datetime
 from app import db
 from flask_login import UserMixin
+from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # User model for authentication
@@ -182,3 +182,22 @@ class Report(db.Model):
     
     def __repr__(self):
         return f'<Report {self.title}>'
+
+# Таблица для хранения результатов оптимизации кампаний
+class CampaignOptimization(db.Model):
+    __tablename__ = 'campaign_optimizations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    token_id = db.Column(db.Integer, db.ForeignKey('yandex_tokens.id'), nullable=False)
+    campaign_ids = db.Column(db.Text, nullable=False)  # JSON-список ID кампаний
+    recommendations = db.Column(db.Text, nullable=True)  # JSON-структура с рекомендациями
+    status = db.Column(db.String(20), default='pending')  # pending, completed, failed
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    
+    # Отношения
+    user = db.relationship('User', backref=db.backref('optimizations', lazy=True))
+    token = db.relationship('YandexToken', backref=db.backref('optimizations', lazy=True))
+    
+    def __repr__(self):
+        return f'<CampaignOptimization id={self.id} user_id={self.user_id}>'
