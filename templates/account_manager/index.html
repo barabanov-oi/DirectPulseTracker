@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Менеджер аккаунтов Яндекс Директа</h1>
+    <p class="lead">Управление подключениями к рекламным аккаунтам</p>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Подключенные аккаунты</h5>
+                </div>
+                <div class="card-body">
+                    {% if accounts %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Название</th>
+                                        <th>Логин</th>
+                                        <th>Пользователь</th>
+                                        <th>Статус</th>
+                                        <th>По умолчанию</th>
+                                        <th>Создан</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for account in accounts %}
+                                    <tr>
+                                        <td>
+                                            <a href="{{ url_for('account_manager.account_details', token_id=account.id) }}">
+                                                {{ account.account_name }}
+                                            </a>
+                                        </td>
+                                        <td>{{ account.client_login or 'Не указан' }}</td>
+                                        <td>{{ account.username }}</td>
+                                        <td>
+                                            {% if account.status == 'Активен' %}
+                                                <span class="badge bg-success">{{ account.status }}</span>
+                                            {% elif account.status == 'Неактивен' %}
+                                                <span class="badge bg-danger">{{ account.status }}</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">{{ account.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if account.is_default %}
+                                                <span class="badge bg-primary">По умолчанию</span>
+                                            {% else %}
+                                                <form action="{{ url_for('account_manager.set_default_account', token_id=account.id) }}" method="post" class="d-inline">
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary">Сделать основным</button>
+                                                </form>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ account.created_at.strftime('%d.%m.%Y') }}</td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('account_manager.account_details', token_id=account.id) }}" class="btn btn-sm btn-info">
+                                                    Детали
+                                                </a>
+                                                <form action="{{ url_for('account_manager.toggle_active', token_id=account.id) }}" method="post" class="d-inline">
+                                                    {% if account.status == 'Активен' %}
+                                                        <button type="submit" class="btn btn-sm btn-warning">Отключить</button>
+                                                    {% else %}
+                                                        <button type="submit" class="btn btn-sm btn-success">Включить</button>
+                                                    {% endif %}
+                                                </form>
+                                                <form action="{{ url_for('account_manager.delete_account', token_id=account.id) }}" method="post" class="d-inline" 
+                                                      onsubmit="return confirm('Вы уверены, что хотите удалить этот аккаунт?');">
+                                                    <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            Пока не подключено ни одного аккаунта Яндекс Директа.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Подключить новый аккаунт</h5>
+                </div>
+                <div class="card-body">
+                    <p>Чтобы подключить новый аккаунт Яндекс Директа, перейдите на страницу авторизации:</p>
+                    <a href="{{ url_for('auth.yandex_auth') }}" class="btn btn-primary">
+                        <i class="fas fa-plus-circle"></i> Подключить аккаунт Яндекс Директа
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
