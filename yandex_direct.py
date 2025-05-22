@@ -1,4 +1,3 @@
-import os
 import json
 import logging
 import requests
@@ -14,24 +13,280 @@ from tapi_yandex_direct.exceptions import YandexDirectApiError
 
 logger = logging.getLogger(__name__)
 
-class YandexDirectAPI:
-    """Class to interact with Yandex Direct API using tapi_yandex_direct"""
+class YandexDirectConnectionManager:
+    """Менеджер для управления подключениями к аккаунтам Яндекс Директа"""
     
     # API endpoints для OAuth
     AUTH_URL = 'https://oauth.yandex.ru/authorize'
     TOKEN_URL = 'https://oauth.yandex.ru/token'
     
-    def __init__(self, token=None):
+    # Настройки OAuth по умолчанию
+    DEFAULT_CLIENT_ID = '736c506b2b1a4c5588e9e8ea8c4054a4'  # Замените на ваш ID при необходимости
+    DEFAULT_CLIENT_SECRET = 'f84cc9e2411841c39bc844a47e9ca57f'  # Замените на ваш секрет при необходимости
+    DEFAULT_REDIRECT_URI = 'http://localhost:5000/auth/yandex/callback'
+    
+    def __init__(self):
+        """Инициализация менеджера подключений"""
+        self.connections = {}  # Словарь активных подключений {token_id: YandexDirectAPI}
+        self.config = {
+            'client_id': self.DEFAULT_CLIENT_ID,
+            'client_secret': self.DEFAULT_CLIENT_SECRET,
+            'redirect_uri': self.DEFAULT_REDIRECT_URI
+        }
+    
+    def set_oauth_config(self, client_id=None, client_secret=None, redirect_uri=None):
+        """Установка OAuth конфигурации для Яндекс Директа"""
+        if client_id:
+            self.config['client_id'] = client_id
+        if client_secret:
+            self.config['client_secret'] = client_secret
+        if redirect_uri:
+            self.config['redirect_uri'] = redirect_uri
+    
+    def get_connection(self, token_id):
         """
-        Initialize with a token object or client credentials
+        Получение или создание подключения для указанного токена
+        
+        Args:
+            token_id: ID токена в базе данных
+            
+        Returns:
+            YandexDirectAPI: Экземпляр API клиента
+        """
+        # Проверяем, есть ли уже активное подключение
+        if token_id in self.connections:
+            return self.connections[token_id]
+        
+        # Получаем токен из базы данных
+        token = YandexToken.query.get(token_id)
+        if not token:
+            logger.error(f"Token with ID {token_id} not found")
+            return None
+        
+        # Создаем новое подключение
+        connection = YandexDirectAPI(token, self.config)
+        self.connections[token_id] = connection
+        return connection
+    
+    def get_connection_for_user(self, user_id, default_only=True):
+        """
+        Получение подключения для указанного пользователя
+        
+        Args:
+            user_id: ID пользователя
+            default_only: Искать только токен по умолчанию
+            
+        Returns:
+            YandexDirectAPI: Экземпляр API клиента
+        """
+        # Ищем токен пользователя
+        if default_only:
+            token = YandexToken.query.filter_by(user_id=user_id, is_default=True).first()
+        else:
+            token = YandexToken.query.filter_by(user_id=user_id, is_active=True).first()
+        
+        if not token:
+            logger.warning(f"No active Yandex token found for user {user_id}")
+            return None
+        
+        # Получаем или создаем подключение
+        return self.get_connection(token.id)
+    
+    def refresh_connection(self, token_id):
+        """
+        Обновить подключение (например, после изменения токена)
+        
+        Args:
+            token_id: ID токена
+            
+        Returns:
+            YandexDirectAPI: Обновленный экземпляр API клиента
+        """
+        # Удаляем существующее подключение из кэша
+        if token_id in self.connections:
+            del self.connections[token_id]
+        
+        # Создаем новое подключение
+        return self.get_connection(token_id)
+    
+    def get_auth_url(self):
+        """
+        Генерировать URL для OAuth авторизации
+        
+        Returns:
+            str: URL для авторизации пользователя
+        """
+        params = {
+            'client_id': self.config['client_id'],
+            'redirect_uri': self.config['redirect_uri'],
+            'response_type': 'code',
+            'force_confirm': 'yes',
+            'scope': 'direct'
+        }
+        return f"{self.AUTH_URL}?{urlencode(params)}"
+    
+    def get_token(self, code):
+        """
+        Обмен кода авторизации на токен доступа
+        
+        Args:
+            code: Код авторизации из callback
+            
+        Returns:
+            dict: Ответ с токеном или None при ошибке
+        """
+        data = {
+            'grant_type': 'authorization_code',
+            'code': code,
+            'client_id': self.config['client_id'],
+            'client_secret': self.config['client_secret'],
+            'redirect_uri': self.config['redirect_uri']
+        }
+        
+        response = requests.post(self.TOKEN_URL, data=data)
+        
+        if response.status_code != 200:
+            logger.error(f"Error getting token: {response.text}")
+            return None
+        
+        return response.json()
+    
+    def refresh_token(self, refresh_token):
+        """
+        Обновление истекшего токена доступа
+        
+        Args:
+            refresh_token: Токен обновления
+            
+        Returns:
+            dict: Новый ответ с токеном или None при ошибке
+        """
+        data = {
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token,
+            'client_id': self.config['client_id'],
+            'client_secret': self.config['client_secret']
+        }
+        
+        response = requests.post(self.TOKEN_URL, data=data)
+        
+        if response.status_code != 200:
+            logger.error(f"Error refreshing token: {response.text}")
+            return None
+        
+        return response.json()
+    
+    def store_token_for_user(self, user_id, token_data, client_login=None, is_default=None):
+        """
+        Сохранение или обновление OAuth токена для пользователя
+        
+        Args:
+            user_id: ID пользователя
+            token_data: Ответ с токеном от API
+            client_login: Логин клиента (для ручного ввода токена)
+            is_default: Установить как токен по умолчанию
+        
+        Returns:
+            YandexToken: Сохраненный объект токена
+        """
+        # Проверяем, есть ли у пользователя токены
+        user_tokens = YandexToken.query.filter_by(user_id=user_id).all()
+        
+        # Определяем, должен ли этот токен быть токеном по умолчанию
+        if is_default is None:
+            # Если это первый токен пользователя, делаем его токеном по умолчанию
+            is_default = len(user_tokens) == 0
+        
+        # Проверяем, есть ли у пользователя такой токен (по client_login)
+        existing_token = None
+        if client_login:
+            existing_token = YandexToken.query.filter_by(
+                user_id=user_id, 
+                client_login=client_login
+            ).first()
+        
+        expires_at = datetime.utcnow() + timedelta(seconds=token_data['expires_in'])
+        
+        if existing_token:
+            # Обновляем существующий токен
+            existing_token.access_token = token_data['access_token']
+            existing_token.refresh_token = token_data.get('refresh_token', existing_token.refresh_token)
+            existing_token.expires_at = expires_at
+            existing_token.updated_at = datetime.utcnow()
+            
+            # Если нужно установить как токен по умолчанию
+            if is_default:
+                # Сбрасываем флаг у всех токенов пользователя
+                for token in user_tokens:
+                    token.is_default = False
+                existing_token.is_default = True
+                
+            token = existing_token
+        else:
+            # Если нужно установить как токен по умолчанию, сбрасываем флаг у всех токенов
+            if is_default:
+                for token in user_tokens:
+                    token.is_default = False
+            
+            # Создаем новый токен
+            token = YandexToken(
+                user_id=user_id,
+                access_token=token_data['access_token'],
+                refresh_token=token_data['refresh_token'],
+                expires_at=expires_at,
+                token_type=token_data.get('token_type', 'Bearer'),
+                client_login=client_login,
+                is_active=True,
+                is_default=is_default
+            )
+            db.session.add(token)
+        
+        # Сохраняем изменения
+        db.session.commit()
+        
+        # Получаем логин клиента через API, если он не задан
+        if not client_login and token:
+            # Создаем временное подключение для получения информации о клиенте
+            connection = YandexDirectAPI(token, self.config)
+            if connection._init_api_client():
+                try:
+                    # Получаем информацию о клиенте
+                    clients_info = connection.api_client.clients().get(
+                        FieldNames=['Login']
+                    )
+                    
+                    if clients_info and 'Clients' in clients_info and clients_info['Clients']:
+                        token.client_login = clients_info['Clients'][0]['Login']
+                        # Используем логин клиента как название аккаунта, если оно не задано
+                        if not token.account_name:
+                            token.account_name = token.client_login
+                        db.session.commit()
+                except Exception as e:
+                    logger.exception(f"Error getting client info: {e}")
+            
+            # Обновляем подключение в кэше менеджера
+            self.refresh_connection(token.id)
+        
+        return token
+
+
+# Создаем глобальный экземпляр менеджера подключений
+connection_manager = YandexDirectConnectionManager()
+
+
+class YandexDirectAPI:
+    """Class to interact with Yandex Direct API using tapi_yandex_direct"""
+    
+    def __init__(self, token=None, config=None):
+        """
+        Initialize with a token object and OAuth config
         
         Args:
             token: YandexToken model instance (optional)
+            config: OAuth configuration dictionary (optional)
         """
         self.token = token
-        self.client_id = os.environ.get('YANDEX_CLIENT_ID')
-        self.client_secret = os.environ.get('YANDEX_CLIENT_SECRET')
-        self.redirect_uri = os.environ.get('YANDEX_REDIRECT_URI', 'http://localhost:5000/auth/yandex/callback')
+        self.config = config or {}
         self.api_client = None
         
         if token and token.access_token:
