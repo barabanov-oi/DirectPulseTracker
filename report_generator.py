@@ -25,13 +25,17 @@ def generate_report(yandex_client, template):
         date_from, date_to = get_date_range(template.date_range)
         
         # Get the campaign statistics
-        df = yandex_client.get_campaign_stats_dataframe(
-            date_from=date_from.strftime('%Y-%m-%d'),
-            date_to=date_to.strftime('%Y-%m-%d')
-        )
-        
-        if df.empty:
-            return None, "No data available for the selected period"
+        logger.info(f"Requesting data from {date_from} to {date_to}")
+        try:
+            df = yandex_client.get_campaign_stats_dataframe(
+                date_from=date_from.strftime('%Y-%m-%d'),
+                date_to=date_to.strftime('%Y-%m-%d')
+            )
+            logger.info(f"Received dataframe with shape: {df.shape}")
+            
+            if df.empty:
+                logger.warning("Received empty dataframe from Yandex Direct API")
+                return None, "Нет данных за выбранный период. Проверьте что: \n1. В аккаунте есть активные кампании\n2. Был выбран корректный период\n3. Токен доступа активен"
         
         # Process and aggregate data
         report_data = process_report_data(df, metrics)
