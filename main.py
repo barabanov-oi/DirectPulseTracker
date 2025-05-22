@@ -10,8 +10,12 @@ from routes import diagnostics
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# No need to register blueprints here since they're already registered 
-# at the end of each route file
+# Регистрируем blueprints здесь
+app.register_blueprint(main.main_bp)
+app.register_blueprint(auth.auth_bp)
+app.register_blueprint(reports.reports_bp)
+app.register_blueprint(admin.admin_bp)
+app.register_blueprint(diagnostics.diagnostics_bp, url_prefix='/diagnostics')
 
 logger.info("Application initialized and ready")
 

@@ -133,5 +133,4 @@ def templates_list():
     templates = ReportTemplate.query.join(User).order_by(User.username, ReportTemplate.name).all()
     return render_template('admin/templates.html', templates=templates)
 
-# Register Blueprint with app
-app.register_blueprint(admin_bp)
+# Blueprint будет зарегистрирован в main.py

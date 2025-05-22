@@ -529,5 +529,4 @@ def export_report(report_id):
     
     return response
 
-# Register Blueprint with app
-app.register_blueprint(reports_bp)
+# Blueprint будет зарегистрирован в main.py

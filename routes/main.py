@@ -61,5 +61,4 @@ def dashboard():
         conditions=conditions
     )
 
-# Register Blueprint with app
-app.register_blueprint(main_bp)
+# Blueprint будет зарегистрирован в main.py

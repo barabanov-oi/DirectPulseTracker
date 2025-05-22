@@ -10,6 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Создаем Blueprint без URL-префикса (префикс указывается при регистрации)
 diagnostics_bp = Blueprint('diagnostics', __name__)
 
 @diagnostics_bp.route('/')
@@ -88,13 +89,10 @@ def edit_account(token_id):
     token = YandexToken.query.filter_by(id=token_id, user_id=current_user.id).first_or_404()
     
     account_name = request.form.get('account_name', '').strip()
-    if account_name:
-        token.account_name = account_name
-        db.session.commit()
-        flash(f'Название аккаунта изменено на "{account_name}"', 'success')
-    else:
-        flash('Название аккаунта не может быть пустым', 'danger')
+    token.account_name = account_name if account_name else None
+    db.session.commit()
     
+    flash('Название аккаунта обновлено', 'success')
     return redirect(url_for('diagnostics.index'))
 
 @diagnostics_bp.route('/api/test/<int:token_id>')
@@ -149,3 +147,5 @@ def test_api_connection(token_id):
             "success": False,
             "message": f"Ошибка при проверке API: {str(e)}"
         })
+
+# Blueprint будет зарегистрирован в основном файле приложения

@@ -174,5 +174,4 @@ def save_yandex_token():
     
     return redirect(url_for('main.dashboard'))
 
-# Register Blueprint with app
-app.register_blueprint(auth_bp)
+# Blueprint будет зарегистрирован в main.py
