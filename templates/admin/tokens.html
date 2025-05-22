@@ -1,24 +1,24 @@
 {% extends 'base.html' %}
 
-{% block title %}Manage Tokens - DirectPulse Admin{% endblock %}
+{% block title %}Управление токенами - Администратор DirectPulse{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-8">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Admin Dashboard</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Yandex Tokens</li>
+                <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Панель администратора</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Токены Яндекс</li>
             </ol>
         </nav>
-        <h1><i class="fas fa-key"></i> Yandex Direct Tokens</h1>
-        <p class="text-muted">Manage user Yandex Direct API access tokens</p>
+        <h1><i class="fas fa-key"></i> Токены Яндекс Директа</h1>
+        <p class="text-muted">Управление токенами доступа пользователей к API Яндекс Директа</p>
     </div>
 </div>
 
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-primary text-white">
-        <h5 class="mb-0"><i class="fas fa-key"></i> Active Tokens</h5>
+        <h5 class="mb-0"><i class="fas fa-key"></i> Активные токены</h5>
     </div>
     <div class="card-body">
         {% if tokens %}
@@ -27,13 +27,13 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>User</th>
-                        <th>Client Login</th>
-                        <th>Created</th>
-                        <th>Updated</th>
-                        <th>Expires</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th>Пользователь</th>
+                        <th>Логин клиента</th>
+                        <th>Создан</th>
+                        <th>Обновлен</th>
+                        <th>Истекает</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -41,21 +41,21 @@
                     <tr>
                         <td>{{ token.id }}</td>
                         <td>{{ token.user.username }}</td>
-                        <td>{{ token.client_login or 'Unknown' }}</td>
+                        <td>{{ token.client_login or 'Неизвестно' }}</td>
                         <td>{{ token.created_at.strftime('%Y-%m-%d') }}</td>
                         <td>{{ token.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
                         <td>{{ token.expires_at.strftime('%Y-%m-%d %H:%M') }}</td>
                         <td>
                             {% if token.is_expired() %}
-                            <span class="badge bg-danger">Expired</span>
+                            <span class="badge bg-danger">Истек</span>
                             {% else %}
-                            <span class="badge bg-success">Valid</span>
+                            <span class="badge bg-success">Действителен</span>
                             {% endif %}
                         </td>
                         <td>
                             <button type="button" class="btn btn-sm btn-outline-danger" 
                                     data-bs-toggle="modal" data-bs-target="#deleteTokenModal{{ token.id }}">
-                                <i class="fas fa-trash-alt"></i> Delete
+                                <i class="fas fa-trash-alt"></i> Удалить
                             </button>
                             
                             <!-- Delete Token Modal -->
@@ -64,19 +64,19 @@
                                     <div class="modal-content">
                                         <div class="modal-header bg-danger text-white">
                                             <h5 class="modal-title" id="deleteTokenModalLabel{{ token.id }}">
-                                                <i class="fas fa-exclamation-triangle"></i> Confirm Deletion
+                                                <i class="fas fa-exclamation-triangle"></i> Подтверждение удаления
                                             </h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
-                                            <p>Are you sure you want to delete the Yandex Direct token for user <strong>{{ token.user.username }}</strong>?</p>
-                                            <p>Client login: <strong>{{ token.client_login or 'Unknown' }}</strong></p>
-                                            <p class="text-danger">This will prevent the user from accessing their Yandex Direct campaigns until they reconnect their account.</p>
+                                            <p>Вы уверены, что хотите удалить токен Яндекс Директа для пользователя <strong>{{ token.user.username }}</strong>?</p>
+                                            <p>Логин клиента: <strong>{{ token.client_login or 'Неизвестно' }}</strong></p>
+                                            <p class="text-danger">Это действие лишит пользователя доступа к его кампаниям Яндекс Директа, пока он не переподключит свой аккаунт.</p>
                                         </div>
                                         <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                                             <form action="{{ url_for('admin.delete_token', token_id=token.id) }}" method="POST">
-                                                <button type="submit" class="btn btn-danger">Delete Token</button>
+                                                <button type="submit" class="btn btn-danger">Удалить токен</button>
                                             </form>
                                         </div>
                                     </div>
@@ -91,8 +91,8 @@
         {% else %}
         <div class="text-center py-5">
             <i class="fas fa-key fa-3x text-muted mb-3"></i>
-            <p>No Yandex Direct tokens have been created yet.</p>
-            <p>Users need to connect their Yandex Direct accounts from their dashboard.</p>
+            <p>Токены Яндекс Директа еще не созданы.</p>
+            <p>Пользователи должны подключить свои аккаунты Яндекс Директа из личного кабинета.</p>
         </div>
         {% endif %}
     </div>
@@ -100,26 +100,26 @@
 
 <div class="card shadow-sm">
     <div class="card-header bg-primary text-white">
-        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Token Information</h5>
+        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Информация о токенах</h5>
     </div>
     <div class="card-body">
         <div class="row">
             <div class="col-md-6">
-                <h5>About Yandex Direct Tokens</h5>
-                <p>Yandex Direct tokens are OAuth 2.0 access tokens that allow DirectPulse to access user's Yandex Direct advertising accounts.</p>
-                <p>Each token is associated with a specific user and can be used to:</p>
+                <h5>О токенах Яндекс Директа</h5>
+                <p>Токены Яндекс Директа - это токены доступа OAuth 2.0, которые позволяют DirectPulse получать доступ к рекламным аккаунтам пользователей в Яндекс Директе.</p>
+                <p>Каждый токен связан с конкретным пользователем и может использоваться для:</p>
                 <ul>
-                    <li>Fetch campaign statistics</li>
-                    <li>Generate reports</li>
-                    <li>Monitor campaign performance</li>
+                    <li>Получения статистики кампаний</li>
+                    <li>Создания отчетов</li>
+                    <li>Мониторинга эффективности рекламы</li>
                 </ul>
-                <p>Tokens expire after a certain period and are automatically refreshed when needed.</p>
+                <p>Токены имеют ограниченный срок действия и автоматически обновляются при необходимости.</p>
             </div>
             <div class="col-md-6">
-                <h5>Access Control</h5>
-                <p>Deleting a token will immediately revoke DirectPulse's access to the user's Yandex Direct account.</p>
-                <p>Users will need to reconnect their Yandex Direct account to continue using automated reports and alerts.</p>
-                <p>For security reasons, full token values are never displayed or stored in plaintext.</p>
+                <h5>Контроль доступа</h5>
+                <p>Удаление токена немедленно отзывает доступ DirectPulse к аккаунту Яндекс Директа пользователя.</p>
+                <p>Пользователям нужно будет повторно подключить свой аккаунт Яндекс Директа для продолжения использования автоматических отчетов и оповещений.</p>
+                <p>В целях безопасности полные значения токенов никогда не отображаются и не хранятся в открытом виде.</p>
             </div>
         </div>
     </div>
