@@ -18,6 +18,10 @@ class Config:
     # Telegram Bot
     TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
     
+    # AI Services
+    OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+    ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
+    
     # APScheduler
     SCHEDULER_API_ENABLED = True
     SCHEDULER_TIMEZONE = "UTC"
