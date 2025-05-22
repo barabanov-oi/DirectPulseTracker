@@ -170,14 +170,90 @@ class YandexDirectAPI:
             logger.exception(f"Error making API request: {e}")
             return None
     
-    def get_campaigns(self):
-        """Get the list of campaigns for the user"""
+    def get_campaigns(self, include_archived=False):
+        """
+        Get the list of campaigns for the user
+        
+        Args:
+            include_archived: Whether to include archived campaigns
+            
+        Returns:
+            dict: API response with campaigns data
+        """
+        selection_criteria = {}
+        if not include_archived:
+            selection_criteria = {
+                'States': ['ON', 'OFF', 'SUSPENDED', 'ENDED']  # Исключаем ARCHIVED
+            }
+            
         params = {
-            'SelectionCriteria': {},
-            'FieldNames': ['Id', 'Name', 'Status', 'State', 'Statistics']
+            'SelectionCriteria': selection_criteria,
+            'FieldNames': [
+                'Id', 'Name', 'Status', 'State', 'Type', 
+                'DailyBudget', 'Statistics'
+            ]
         }
         
         return self.make_api_request('campaigns', 'get', params)
+        
+    def get_campaign_details(self, campaign_ids=None):
+        """
+        Get detailed information about specific campaigns including statistics
+        
+        Args:
+            campaign_ids: List of campaign IDs (optional, if None gets all campaigns)
+            
+        Returns:
+            list: List of campaign details with statistics
+        """
+        # Get campaigns first
+        campaigns_response = self.get_campaigns(include_archived=True)
+        if not campaigns_response:
+            return []
+            
+        campaigns = campaigns_response.get('Campaigns', [])
+        
+        # Filter by IDs if specified
+        if campaign_ids:
+            campaigns = [c for c in campaigns if str(c.get('Id')) in [str(cid) for cid in campaign_ids]]
+            
+        # Get statistics for today if available
+        today = datetime.now().strftime('%Y-%m-%d')
+        stats = self.get_campaign_stats(
+            campaign_ids=[c.get('Id') for c in campaigns],
+            date_from=today,
+            date_to=today
+        )
+        
+        # Merge stats with campaign data
+        campaign_stats = {}
+        if stats:
+            for row in stats.get('Rows', []):
+                campaign_stats[row.get('CampaignId')] = row
+                
+        # Create detailed campaign objects
+        result = []
+        for campaign in campaigns:
+            campaign_id = campaign.get('Id')
+            campaign_stats_data = campaign_stats.get(campaign_id, {})
+            
+            # Create a detailed object
+            campaign_detail = {
+                'Id': campaign_id,
+                'Name': campaign.get('Name', ''),
+                'Status': campaign.get('Status', ''),
+                'State': campaign.get('State', ''),
+                'Type': campaign.get('Type', ''),
+                'DailyBudget': campaign.get('DailyBudget', {}).get('Amount', 0) if campaign.get('DailyBudget') else 0,
+                'Impressions': campaign_stats_data.get('Impressions', 0),
+                'Clicks': campaign_stats_data.get('Clicks', 0),
+                'Cost': campaign_stats_data.get('Cost', 0),
+                'LastUpdated': datetime.now().isoformat()
+            }
+            
+            result.append(campaign_detail)
+            
+        return result
     
     def get_campaign_stats(self, campaign_ids=None, date_from=None, date_to=None):
         """

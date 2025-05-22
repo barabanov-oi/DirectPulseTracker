@@ -37,19 +37,36 @@ class YandexToken(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    account_name = db.Column(db.String(120), nullable=True)  # Название аккаунта для удобства пользователя
     access_token = db.Column(db.String(1024), nullable=False)
     refresh_token = db.Column(db.String(1024), nullable=False)
     token_type = db.Column(db.String(64), default='Bearer')
     expires_at = db.Column(db.DateTime, nullable=False)
     client_login = db.Column(db.String(120), nullable=True)
+    is_active = db.Column(db.Boolean, default=True)  # Активен ли аккаунт
+    is_default = db.Column(db.Boolean, default=False)  # Аккаунт по умолчанию
+    last_used = db.Column(db.DateTime, nullable=True)  # Когда последний раз использовался
+    last_status = db.Column(db.String(256), nullable=True)  # Результат последней проверки
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Связь с кампаниями
+    campaigns = db.relationship('YandexCampaign', backref='token', lazy='dynamic', cascade='all, delete-orphan')
+    
     def __repr__(self):
-        return f'<YandexToken {self.client_login}>'
+        display_name = self.account_name or self.client_login or f"ID: {self.id}"
+        return f'<YandexToken {display_name}>'
     
     def is_expired(self):
         return datetime.utcnow() > self.expires_at
+        
+    def get_status(self):
+        """Возвращает текущий статус подключения к аккаунту"""
+        if not self.is_active:
+            return "Неактивен"
+        if self.is_expired():
+            return "Токен устарел"
+        return "Активен"
 
 # Report template model
 class ReportTemplate(db.Model):
@@ -106,6 +123,38 @@ class Condition(db.Model):
     def __repr__(self):
         return f'<Condition {self.name}>'
 
+# Модель для хранения информации о рекламных кампаниях Яндекс Директа
+class YandexCampaign(db.Model):
+    __tablename__ = 'yandex_campaigns'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    token_id = db.Column(db.Integer, db.ForeignKey('yandex_tokens.id'), nullable=False)
+    campaign_id = db.Column(db.String(64), nullable=False)  # ID кампании в Яндекс Директе
+    name = db.Column(db.String(256), nullable=False)  # Название кампании
+    status = db.Column(db.String(64), nullable=False)  # Статус кампании (ON, OFF, SUSPENDED и т.д.)
+    state = db.Column(db.String(64), nullable=True)  # Состояние кампании (ARCHIVED, ENDED и т.д.)
+    type = db.Column(db.String(64), nullable=True)  # Тип кампании (TEXT, SMART, и т.д.)
+    daily_budget = db.Column(db.Float, nullable=True)  # Дневной бюджет
+    impressions = db.Column(db.Integer, nullable=True)  # Число показов
+    clicks = db.Column(db.Integer, nullable=True)  # Число кликов
+    cost = db.Column(db.Float, nullable=True)  # Стоимость
+    last_updated = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<YandexCampaign {self.name} - {self.status}>'
+    
+    def get_status_display(self):
+        """Возвращает удобочитаемый статус кампании"""
+        status_map = {
+            'ON': 'Активна',
+            'OFF': 'Выключена',
+            'SUSPENDED': 'Приостановлена',
+            'ARCHIVED': 'В архиве',
+            'ENDED': 'Завершена'
+        }
+        return status_map.get(self.status, self.status)
+
 # Report model to store generated reports
 class Report(db.Model):
     __tablename__ = 'reports'
@@ -113,6 +162,7 @@ class Report(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     template_id = db.Column(db.Integer, db.ForeignKey('report_templates.id'), nullable=False)
+    token_id = db.Column(db.Integer, db.ForeignKey('yandex_tokens.id'), nullable=True)  # Добавляем связь с конкретным аккаунтом
     schedule_id = db.Column(db.Integer, db.ForeignKey('schedules.id'), nullable=True)
     condition_id = db.Column(db.Integer, db.ForeignKey('conditions.id'), nullable=True)
     title = db.Column(db.String(256), nullable=False)
@@ -126,6 +176,7 @@ class Report(db.Model):
     # Relationships
     user = db.relationship('User')
     template = db.relationship('ReportTemplate')
+    token = db.relationship('YandexToken', foreign_keys=[token_id])
     schedule = db.relationship('Schedule', foreign_keys=[schedule_id])
     condition = db.relationship('Condition', foreign_keys=[condition_id])
     
